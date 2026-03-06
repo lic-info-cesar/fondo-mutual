@@ -1295,3 +1295,292 @@ function buscarRecibosSec(){
               <td style="padding:9px 10px;color:var(--text2);">${r.fecha}</td>
               <td style="padding:9px 10px;" onclick="event.stopPropagation()">
                 <div style="display:flex;gap:6px;">
+                  <button class="btn btn-sm btn-primary" title="Previsualizar" onclick="previewReciboSec(${r.num_recibo})">👁️</button>
+                  <button class="btn btn-sm" style="background:var(--success);color:#fff;" title="Imprimir" onclick="imprimirDirectoSec(${r.num_recibo})">🖨️</button>
+                </div>
+              </td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+function previewReciboSec(num){
+  // Resaltar fila seleccionada
+  document.querySelectorAll('[id^="bsq_row_"]').forEach(tr=>tr.style.background='');
+  const rowEl=document.getElementById('bsq_row_'+num);
+  if(rowEl) rowEl.style.background='rgba(212,160,23,0.1)';
+
+  const r=DB.get('recibos_secciones',[]).find(x=>x.num_recibo===num);
+  if(!r)return;
+
+  const logoSrc=DB.get('logoData','')||'';
+  const ns=fmtNum(r.num_recibo);
+
+  const html=`<div style="background:#fff;color:#000;padding:16px 20px;border-radius:6px;font-family:Arial,sans-serif;font-size:12px;max-width:700px;margin:0 auto;">
+    <div style="margin-bottom:6px;"><img src="${logoSrc}" style="width:100%;display:block;" onerror="this.style.display='none'"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+      <span style="font-weight:bold;font-size:13px;">RECIBO No. ${ns}</span>
+      <span>Tepic, Nayarit; ${r.fecha}</span>
+    </div>
+    <div style="line-height:1.8;margin-bottom:10px;">
+      <p style="text-align:justify;margin:0 0 8px;"><strong>R &nbsp;E &nbsp;C &nbsp;I &nbsp;B &nbsp;I</strong> &nbsp;del C. <strong>${r.nombre_trabajador}</strong>, <strong>DELEGADO DE LA SECCIÓN DE &quot;${r.seccion}&quot;</strong>; la cantidad de <strong>$ ${fmt(r.monto)}</strong> (<strong>${r.monto_texto}</strong>), ${r.concepto||r.descripcion||''}. Forma de pago: <strong>${r.forma_pago}</strong>.</p>
+      <div style="display:flex;justify-content:space-between;border-top:1.5px solid #333;padding-top:6px;font-weight:bold;font-size:13px;">
+        <span>Total Recibido</span><span>$ ${fmt(r.monto)}</span>
+      </div>
+    </div>
+    <div style="margin-top:16px;text-align:center;">
+      <div style="border-top:1.5px solid #333;width:200px;margin:0 auto 4px;"></div>
+      <div style="font-size:11px;margin-bottom:3px;">RECIBIÓ</div>
+      <strong>C.P. MARÍA DEL CONSUELO LLANOS ESQUIVEL</strong><br>
+      <span style="font-size:11px;">TESORERA DEL FONDO DE MUTUALIDAD.</span>
+    </div>
+    ${r.evidencia?`<div style="margin-top:14px;border-top:1px dashed #aaa;padding-top:10px;text-align:center;">
+      <div style="font-size:11px;font-weight:bold;margin-bottom:6px;">COMPROBANTE DE PAGO ADJUNTO</div>
+      ${r.evidencia.type==='application/pdf'
+        ?`<div style="padding:10px;background:#f5f5f5;border-radius:4px;font-size:12px;">📄 ${r.evidencia.name}</div>`
+        :`<img src="${r.evidencia.data}" style="max-width:100%;max-height:200px;object-fit:contain;border:1px solid #ddd;border-radius:4px;">`}
+    </div>`:''}
+  </div>`;
+
+  document.getElementById('bsq_preview_content').innerHTML=html;
+  const area=document.getElementById('bsq_preview_area');
+  area.style.display='block';
+  window._bsqPreviewNum=num;
+  // Scroll suave al preview
+  setTimeout(()=>area.scrollIntoView({behavior:'smooth',block:'start'}),80);
+}
+
+function cerrarPreviewSec(){
+  document.getElementById('bsq_preview_area').style.display='none';
+  document.getElementById('bsq_preview_content').innerHTML='';
+  document.querySelectorAll('[id^="bsq_row_"]').forEach(tr=>tr.style.background='');
+  window._bsqPreviewNum=null;
+}
+
+function imprimirPreviewSec(){
+  if(!window._bsqPreviewNum)return;
+  verRecibo(window._bsqPreviewNum,true);
+  setTimeout(()=>imprimirRecibo(),400);
+}
+
+function imprimirDirectoSec(num){
+  verRecibo(num,true);
+  setTimeout(()=>imprimirRecibo(),400);
+}
+
+function imprimirTodosResultadosSec(){
+  const R=window._bsqResultados;
+  if(!R||!R.length)return;
+  if(!confirm(`¿Imprimir los ${R.length} recibos encontrados? Se abrirá una ventana con todos.`))return;
+
+  const logoSrc=DB.get('logoData','')||'';
+  const css=`@page{size:letter portrait;margin:0}
+    body{font-family:Arial,sans-serif;font-size:12px;margin:0;padding:0}
+    .pg{width:200mm;min-height:115mm;max-height:126mm;margin:5mm auto 0;padding:5mm 8mm;box-sizing:border-box;border:0.5px solid #ccc;background:#fff;color:#000;overflow:hidden;}
+    .sep{border:none;border-top:3px dashed #999;margin:0}
+    .pg2{width:200mm;margin:5mm auto;padding:5mm 8mm;box-sizing:border-box;background:#fff;color:#000;}
+    @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}`;
+
+  let body='';
+  R.forEach((r,i)=>{
+    const ns=fmtNum(r.num_recibo);
+    const recTxt=`<div style="margin-bottom:5px;"><img src="${logoSrc}" style="width:100%;display:block;" onerror="this.style.display='none'"></div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:5px;">
+        <strong>RECIBO No. ${ns}</strong><span>Tepic, Nayarit; ${r.fecha}</span>
+      </div>
+      <p style="text-align:justify;font-size:11px;margin:0 0 6px;line-height:1.6;"><strong>R &nbsp;E &nbsp;C &nbsp;I &nbsp;B &nbsp;I</strong> del C. <strong>${r.nombre_trabajador}</strong>, <strong>DELEGADO DE LA SECCIÓN DE &quot;${r.seccion}&quot;</strong>; la cantidad de <strong>$ ${fmt(r.monto)}</strong> (<strong>${r.monto_texto}</strong>), ${r.concepto||r.descripcion||''}. Forma de pago: <strong>${r.forma_pago}</strong>.</p>
+      <div style="display:flex;justify-content:space-between;border-top:1px solid #999;padding-top:4px;font-weight:bold;font-size:11px;"><span>Total Recibido</span><span>$ ${fmt(r.monto)}</span></div>
+      <div style="margin-top:14px;text-align:center;">
+        <div style="border-top:1.5px solid #333;width:180px;margin:0 auto 3px;"></div>
+        <div style="font-size:10px;margin-bottom:2px;">RECIBIÓ</div>
+        <strong style="font-size:11px;">C.P. MARÍA DEL CONSUELO LLANOS ESQUIVEL</strong><br>
+        <span style="font-size:10px;">TESORERA DEL FONDO DE MUTUALIDAD.</span>
+      </div>`;
+
+    if(i>0) body+=`<div style="page-break-before:always;"></div>`;
+    body+=`<div class="pg">${recTxt}</div><hr class="sep"><div class="pg">${recTxt}</div>`;
+
+    if(r.evidencia){
+      const isPdf=r.evidencia.type==='application/pdf';
+      const evContent=isPdf
+        ?`<iframe src="${r.evidencia.data}" style="width:100%;height:120mm;border:none;"></iframe>`
+        :`<img src="${r.evidencia.data}" style="max-width:100%;max-height:120mm;object-fit:contain;border:1px solid #ddd;">`;
+      body+=`<div class="pg2" style="page-break-before:always;">
+        <div style="font-weight:bold;font-size:11px;margin-bottom:8px;">RECIBO No. ${ns} — COMPROBANTE DE PAGO</div>
+        <div style="font-size:10px;color:#555;margin-bottom:8px;">${r.nombre_trabajador} · ${r.fecha}</div>
+        ${evContent}
+      </div>`;
+    }
+  });
+
+  const w=window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Recibos Secciones</title><style>${css}</style></head><body>${body}</body></html>`);
+  w.document.close();
+  setTimeout(()=>w.print(),700);
+}
+
+
+function renderRecibosSeccion(list){
+  const R=list||DB.get('recibos_secciones');
+  document.getElementById('tbl-rec-secciones').innerHTML=R.length?[...R].sort((a,b)=>b.num_recibo-a.num_recibo).map(r=>`<tr>
+    <td><strong>${fmtNum(r.num_recibo)}</strong></td>
+    <td>${r.seccion}</td>
+    <td><strong>${r.nombre_trabajador}</strong></td>
+    <td>$${fmt(r.monto)}</td>
+    <td>${r.forma_pago}</td>
+    <td>${r.fecha}</td>
+    <td>
+      <button class="btn btn-sm btn-primary" onclick="verRecibo(${r.num_recibo},true)">👁️</button>
+    </td></tr>`).join('')
+    :'<tr><td colspan="8" class="empty-state"><div class="icon">🧾</div>Sin recibos de secciones</td></tr>';
+}
+
+function filtrarRecibosSeccion(){
+  const q=(document.getElementById('busqSeccion').value||'').toLowerCase();
+  let R=DB.get('recibos_secciones');
+  if(q)R=R.filter(r=>(r.nombre_trabajador||'').toLowerCase().includes(q)||(r.num_empleado+'').includes(q)||(r.seccion||'').toLowerCase().includes(q));
+  renderRecibosSeccion(R);
+}
+
+function openModalReciboSeccion(){
+  populateSeccionSelects();
+  document.getElementById('alertReciboSec').innerHTML='';
+  ['recSecNombre','recSecConcepto'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('recSecMonto').value='';
+  document.getElementById('recSecFormaPago').value='';
+  document.getElementById('evidenciaSecGroup').style.display='none';
+  document.getElementById('evidenciaSecPreview').innerHTML='';
+  document.getElementById('evidenciaSecArea').classList.remove('has-file');
+  window._evidenciaSecData=null;
+  openModal('modalReciboSeccion');
+}
+
+function checkFormaPagoSec(){
+  const fp=document.getElementById('recSecFormaPago').value;
+  document.getElementById('evidenciaSecGroup').style.display=(fp&&fp!=='EFECTIVO')?'block':'none';
+}
+
+function handleEvidenciaSecFile(ev){
+  const f=ev.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    window._evidenciaSecData={name:f.name,type:f.type,data:e.target.result};
+    document.getElementById('evidenciaSecArea').classList.add('has-file');
+    const isPdf=f.type==='application/pdf';
+    document.getElementById('evidenciaSecPreview').innerHTML=isPdf
+      ?'<div style="padding:10px;background:rgba(255,255,255,.08);border-radius:6px;text-align:center;"><span style="font-size:28px;">📄</span><br><span style="font-size:12px;color:var(--text2)">'+f.name+'</span></div>'
+      :'<img src="'+e.target.result+'" class="file-preview-img">';
+  };
+  r.readAsDataURL(f);
+}
+
+function autocompletarDelegado(){
+  const sec=document.getElementById('recSecSeccion').value;
+  const L=DB.get('secciones');
+  const s=L.find(x=>x.nombre===sec);
+  const campo=document.getElementById('recSecNombre');
+  if(s&&s.delegado)campo.value=s.delegado;
+}
+function guardarReciboSeccion(){
+  const sec=document.getElementById('recSecSeccion').value;
+  const nombre=document.getElementById('recSecNombre').value.trim();
+  const monto=parseFloat(document.getElementById('recSecMonto').value);
+  const fp=document.getElementById('recSecFormaPago').value;
+  const desc=document.getElementById('recSecConcepto').value.trim();
+  if(!sec||!nombre||!monto||!fp||!desc){document.getElementById('alertReciboSec').innerHTML='<div class="alert alert-danger">⚠️ Todos los campos son requeridos.</div>';return;}
+  const num=getNextReciboSecNum();
+  const now=new Date();
+  const r={num_recibo:num,seccion:sec,nombre_trabajador:nombre,monto:monto,monto_texto:monto.toLocaleString('es-MX',{minimumFractionDigits:2})+' M.N.',concepto:desc,forma_pago:fp,fecha:now.toLocaleDateString('es-MX',{day:'2-digit',month:'long',year:'numeric'}),fecha_iso:now.toISOString(),evidencia:window._evidenciaSecData||null};
+  let L=DB.get('recibos_secciones');L.push(r);DB.set('recibos_secciones',L);
+  closeModal('modalReciboSeccion');renderRecibosSeccion();
+}
+
+// CSV
+function cargarCSV(ev){
+  const f=ev.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    const lines=e.target.result.split('\n').filter(l=>l.trim());
+    const data=lines.map(l=>l.split(',').map(c=>c.trim()));
+    const key='_csvDataTemp';window[key]=data;
+    document.getElementById('csvPreview').innerHTML=`<div class="card"><div class="card-title" style="font-size:13px">Vista Previa - ${data.length} registros</div>
+      <div class="table-wrap"><table><thead><tr><th>No.Emp</th><th>Nombre</th><th>Ap.Pat</th><th>Ap.Mat</th><th>Monto</th></tr></thead>
+      <tbody>${data.slice(0,10).map(r=>'<tr>'+r.slice(0,5).map(c=>`<td>${c}</td>`).join('')+'</tr>').join('')}</tbody></table></div>
+      <div class="btn-row"><button class="btn btn-gold" onclick="importarCSVData(window._csvDataTemp)">📥 Importar</button></div></div>`;
+  };r.readAsText(f);
+}
+
+function importarCSVData(data){
+  const sec=prompt('Nombre de la sección foránea:','Sección Foránea');if(!sec)return;
+  let L=DB.get('recibos_secciones');let cnt=0;
+  data.forEach(row=>{
+    if(row.length>=4){
+      const now=new Date();
+      L.push({num_recibo:getNextReciboSecNum()+cnt,seccion:sec,num_empleado:row[0],nombre_trabajador:(row[2]||'')+' '+(row[3]||'')+' '+(row[1]||''),monto:parseFloat(row[4])||0,monto_texto:'',concepto:'Aportación al Fondo de Mutualidad (CSV)',forma_pago:'TRANSFERENCIA',fecha:now.toLocaleDateString('es-MX',{day:'2-digit',month:'long',year:'numeric'}),fecha_iso:now.toISOString()});
+      cnt++;
+    }
+  });
+  DB.set('recibos_secciones',L);
+  alert('✅ Se importaron '+cnt+' registros.');
+  document.getElementById('csvPreview').innerHTML='<div class="alert alert-success">✅ Importación completada. Revise la pestaña "Recibos de Secciones".</div>';
+}
+
+
+
+// ═══ RESPALDO ═══
+function exportarRespaldo(){
+  const data={
+    version:'1.0',
+    fecha: new Date().toISOString(),
+    trabajadores: DB.get('trabajadores',[]),
+    recibos: DB.get('recibos',[]),
+    recibos_secciones: DB.get('recibos_secciones',[]),
+    secciones: DB.get('secciones',[])
+  };
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  const fecha=new Date().toISOString().slice(0,10);
+  a.download='FONDO_MUTUAL_respaldo_'+fecha+'.json';
+  a.click();
+  document.getElementById('respaldoMsg').innerHTML='<div class="alert alert-success">✅ Respaldo exportado correctamente.</div>';
+}
+
+function importarRespaldo(){
+  const file=document.getElementById('inputRespaldo').files[0];
+  if(!file){document.getElementById('respaldoMsg').innerHTML='<div class="alert alert-warning">⚠️ Selecciona un archivo JSON.</div>';return;}
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const data=JSON.parse(e.target.result);
+      if(!data.trabajadores&&!data.recibos){throw new Error('Archivo inválido');}
+      if(!confirm('⚠️ Esto reemplazará TODOS los datos actuales con los del respaldo.\n¿Continuar?'))return;
+      if(data.trabajadores) DB.set('trabajadores',data.trabajadores);
+      if(data.recibos) DB.set('recibos',data.recibos);
+      if(data.recibos_secciones) DB.set('recibos_secciones',data.recibos_secciones);
+      if(data.secciones) DB.set('secciones',data.secciones);
+      renderDashboard();
+      document.getElementById('respaldoMsg').innerHTML='<div class="alert alert-success">✅ Respaldo importado. Trabajadores: '+data.trabajadores.length+' | Recibos: '+data.recibos.length+'</div>';
+    }catch(err){
+      document.getElementById('respaldoMsg').innerHTML='<div class="alert alert-danger">❌ Error: archivo JSON inválido o corrupto.</div>';
+    }
+  };
+  reader.readAsText(file);
+}
+
+// INIT
+if(!DB.get('secciones').length){DB.set('secciones',[{id:1,nombre:"Acaponeta"},{id:2,nombre:"Ahuacatlán"},{id:3,nombre:"Amatlán de Cañas"},{id:4,nombre:"Bahía de Banderas"},{id:5,nombre:"Compostela"},{id:6,nombre:"Del Nayar"},{id:7,nombre:"Huajicori"},{id:8,nombre:"Ixtlán del Río"},{id:9,nombre:"Jala"},{id:10,nombre:"La Yesca"},{id:11,nombre:"Loreto"},{id:12,nombre:"Rosamorada"},{id:13,nombre:"Ruíz"},{id:14,nombre:"San Blas"},{id:15,nombre:"San Pedro Lagunillas"},{id:16,nombre:"Santa María del Oro"},{id:17,nombre:"Santiago Ixcuintla"},{id:18,nombre:"Tecuala"},{id:19,nombre:"Tuxpan"},{id:20,nombre:"Xalisco"}]);}
+renderDashboard();
+  // ═══ TEMAS ═══
+  window.setTheme = function(t) {
+    document.documentElement.setAttribute('data-theme', t);
+    document.querySelectorAll('.theme-dot').forEach(d => {
+      d.classList.toggle('active', d.dataset.t === t);
+    });
+    localStorage.setItem('fm_theme', t);
+  };
+  const savedTheme = localStorage.getItem('fm_theme');
+  if (savedTheme) setTheme(savedTheme);
+</script></body></html>
