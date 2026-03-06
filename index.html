@@ -356,7 +356,7 @@
         <button class="btn btn-gold" onclick="openModalReciboSeccion()">➕ Nuevo Recibo</button>
       </div>
       <div class="table-wrap">
-        <table><thead><tr><th>No.</th><th>Sección</th><th>Trabajador</th><th>No.Emp</th><th>Monto</th><th>Pago</th><th>Fecha</th><th>Acciones</th></tr></thead><tbody id="tbl-rec-secciones"></tbody></table>
+        <table><thead><tr><th>No.</th><th>Sección</th><th>Trabajador</th><th>Monto</th><th>Pago</th><th>Fecha</th><th>Acciones</th></tr></thead><tbody id="tbl-rec-secciones"></tbody></table>
       </div>
     </div>
   </div>
@@ -375,11 +375,12 @@
   <div class="inner-panel" id="sip-admin">
     <div class="card">
       <div class="card-title">🏢 Secciones Registradas</div>
-      <div style="display:flex;gap:10px;margin-bottom:16px;">
-        <input type="text" id="nuevaSeccion" placeholder="Nombre de la sección..." style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:9px 12px;flex:1;">
-        <button class="btn btn-gold" onclick="agregarSeccion()">➕ Agregar</button>
+      <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:10px;margin-bottom:16px;align-items:end;">
+        <div><label style="font-size:11px;color:var(--text2);display:block;margin-bottom:4px;">Municipio / Sección</label><input type="text" id="nuevaSeccion" placeholder="Nombre de la sección..." style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:9px 12px;width:100%;box-sizing:border-box;"></div>
+        <div><label style="font-size:11px;color:var(--text2);display:block;margin-bottom:4px;">Nombre del Delegado</label><input type="text" id="nuevoDelegado" placeholder="Nombre del delegado..." style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:9px 12px;width:100%;box-sizing:border-box;"></div>
+        <button class="btn btn-gold" onclick="agregarSeccion()" style="height:40px;">➕ Agregar</button>
       </div>
-      <div class="table-wrap"><table><thead><tr><th>ID</th><th>Nombre</th><th>Acciones</th></tr></thead><tbody id="tbl-secciones"></tbody></table></div>
+      <div class="table-wrap"><table><thead><tr><th>ID</th><th>Municipio / Sección</th><th>Delegado</th><th>Acciones</th></tr></thead><tbody id="tbl-secciones"></tbody></table></div>
     </div>
   </div>
 </div>
@@ -426,6 +427,14 @@
     </div>
 
     <div id="respaldoMsg"></div>
+
+    <!-- MIGRACIÓN DE RECIBOS -->
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:20px;margin-top:10px;">
+      <div style="font-size:14px;font-weight:700;margin-bottom:8px;color:var(--accent);">🔧 Migración de Recibos</div>
+      <p style="font-size:12px;color:var(--text2);margin-bottom:14px;">Actualiza recibos antiguos con los campos <strong>P.O.S.</strong> y <strong>Adscripción</strong> del trabajador registrado, para que el texto del recibo se genere correctamente.</p>
+      <button class="btn" style="background:#0e7490;" onclick="migrarRecibos()">🔄 Actualizar recibos antiguos</button>
+      <div id="migMsg" style="margin-top:10px;font-size:12px;"></div>
+    </div>
 
     <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-top:10px;">
       <div style="font-size:13px;font-weight:700;margin-bottom:8px;">📊 Estado Actual de Datos</div>
@@ -545,9 +554,9 @@
     <div class="modal-title">🧾 Recibo de Sección Foránea</div>
     <div id="alertReciboSec"></div>
     <div class="form-grid">
-      <div class="form-group"><label>Sección *</label><select id="recSecSeccion"></select></div>
-      <div class="form-group"><label>No. Empleado *</label><input type="text" id="recSecNumEmp" placeholder="Número de empleado"></div>
-      <div class="form-group"><label>Nombre Completo *</label><input type="text" id="recSecNombre" placeholder="Nombre del trabajador"></div>
+      <div class="form-group"><label>Sección *</label><select id="recSecSeccion" onchange="autocompletarDelegado()"></select></div>
+      
+      <div class="form-group"><label>Nombre del Delegado *</label><input type="text" id="recSecNombre" placeholder="Nombre del delegado"></div>
       <div class="form-group"><label>Monto *</label><input type="number" id="recSecMonto" step="0.01" min="0" placeholder="0.00"></div>
       <div class="form-group">
         <label>Forma de Pago *</label>
@@ -1003,7 +1012,7 @@ function guardarRecibo(){
   const t=DB.get('trabajadores').find(x=>x.id===tid);
   const num=getNextReciboNum();
   const now=new Date();
-  const rec={num_recibo:num,trab_id:tid,num_empleado:t.num_empleado,nombre_trabajador:t.apellido_paterno+' '+(t.apellido_materno||'')+' '+t.nombre,pos:t.pos,dependencia:t.dependencia||'',monto:monto,monto_texto:montoT,descripcion:descripcion,forma_pago:fp,fecha:now.toLocaleDateString('es-MX',{day:'2-digit',month:'long',year:'numeric'}),fecha_iso:now.toISOString(),evidencia:window._evidenciaData||null};
+  const rec={num_recibo:num,trab_id:tid,num_empleado:t.num_empleado,nombre_trabajador:t.apellido_paterno+' '+(t.apellido_materno||'')+' '+t.nombre,pos:t.pos,adscripcion:t.adscripcion||'',dependencia:t.dependencia||'',monto:monto,monto_texto:montoT,descripcion:descripcion,forma_pago:fp,fecha:now.toLocaleDateString('es-MX',{day:'2-digit',month:'long',year:'numeric'}),fecha_iso:now.toISOString(),evidencia:window._evidenciaData||null};
   let R=DB.get('recibos');R.push(rec);DB.set('recibos',R);
   closeModal('modalRecibo');
   renderRecibos();
@@ -1030,7 +1039,7 @@ function verRecibo(num,esS){
       <span style="font-weight:bold;">RECIBO No. ${ns}</span>
       <span>Tepic, Nayarit; ${r.fecha}</span>
     </div>
-    <div style="margin:5px 0;line-height:1.6;">\n      <p style="text-align:justify;"><strong>R &nbsp; E &nbsp; C &nbsp; I &nbsp; B &nbsp; I</strong> &nbsp; del C. <strong>${r.nombre_trabajador}</strong>, con número de empleado <strong>${r.num_empleado}</strong>, trabajador <strong>ACTIVO</strong> de <strong>GOBIERNO DEL ESTADO</strong>; la cantidad de <strong>$ ${fmt(r.monto)}</strong> (<strong>${r.monto_texto} M.N.</strong>), ${r.descripcion||''}</p>\n      <div style="display:flex;justify-content:space-between;border-top:1px solid #999;padding-top:5px;margin-top:5px;font-weight:bold;">\n        <span>Total Recibido</span><span>$ ${fmt(r.monto)}</span>\n      </div>\n    </div>\n    <div style="margin-top:10px;text-align:center;">\n      <div style="border-top:1.5px solid #333;width:220px;margin:0 auto 3px;"></div>\n      <div style="font-size:11px;margin-bottom:3px;">RECIBIÓ</div>\n      <strong>C.P. MARÍA DEL CONSUELO LLANOS ESQUIVEL</strong><br>\n      <span>TESORERA DEL FONDO DE MUTUALIDAD.</span>\n    </div>\n  </div>
+    <div style="margin:5px 0;line-height:1.6;">\n      <p style="text-align:justify;"><strong>R &nbsp; E &nbsp; C &nbsp; I &nbsp; B &nbsp; I</strong> &nbsp; del C. <strong>${r.nombre_trabajador}</strong>, con número de empleado <strong>${r.num_empleado}</strong>, trabajador <strong>ACTIVO</strong> <strong>${(r.pos&&r.pos.toLowerCase().includes("poder"))?"del "+r.pos:"de "+(r.adscripcion||"GOBIERNO DEL ESTADO")}</strong>; la cantidad de <strong>$ ${fmt(r.monto)}</strong> (<strong>${r.monto_texto} M.N.</strong>), ${r.descripcion||''}</p>\n      <div style="display:flex;justify-content:space-between;border-top:1px solid #999;padding-top:5px;margin-top:5px;font-weight:bold;">\n        <span>Total Recibido</span><span>$ ${fmt(r.monto)}</span>\n      </div>\n    </div>\n    <div style="margin-top:10px;text-align:center;">\n      <div style="border-top:1.5px solid #333;width:220px;margin:0 auto 3px;"></div>\n      <div style="font-size:11px;margin-bottom:3px;">RECIBIÓ</div>\n      <strong>C.P. MARÍA DEL CONSUELO LLANOS ESQUIVEL</strong><br>\n      <span>TESORERA DEL FONDO DE MUTUALIDAD.</span>\n    </div>\n  </div>
   <hr style="border:none;border-top:3px dashed #999;margin:6px 0;">
   <div style="background:#fff;color:#000;padding:10px 14px;border-radius:8px;font-family:Arial,sans-serif;font-size:13px;" id="rh2">
     <div style="margin-bottom:5px;">
@@ -1040,7 +1049,7 @@ function verRecibo(num,esS){
       <span style="font-weight:bold;">RECIBO No. ${ns}</span>
       <span>Tepic, Nayarit; ${r.fecha}</span>
     </div>
-    <div style="margin:5px 0;line-height:1.6;">\n      <p style="text-align:justify;"><strong>R &nbsp; E &nbsp; C &nbsp; I &nbsp; B &nbsp; I</strong> &nbsp; del C. <strong>${r.nombre_trabajador}</strong>, con número de empleado <strong>${r.num_empleado}</strong>, trabajador <strong>ACTIVO</strong> de <strong>GOBIERNO DEL ESTADO</strong>; la cantidad de <strong>$ ${fmt(r.monto)}</strong> (<strong>${r.monto_texto} M.N.</strong>), ${r.descripcion||''}</p>\n      <div style="display:flex;justify-content:space-between;border-top:1px solid #999;padding-top:5px;margin-top:5px;font-weight:bold;">\n        <span>Total Recibido</span><span>$ ${fmt(r.monto)}</span>\n      </div>\n    </div>\n    <div style="margin-top:10px;text-align:center;">\n      <div style="border-top:1.5px solid #333;width:220px;margin:0 auto 6px;"></div>\n      <div style="font-size:11px;margin-bottom:3px;">RECIBIÓ</div>\n      <strong>C.P. MARÍA DEL CONSUELO LLANOS ESQUIVEL</strong><br>\n      <span>TESORERA DEL FONDO DE MUTUALIDAD.</span>\n    </div>\n  </div>`;
+    <div style="margin:5px 0;line-height:1.6;">\n      <p style="text-align:justify;"><strong>R &nbsp; E &nbsp; C &nbsp; I &nbsp; B &nbsp; I</strong> &nbsp; del C. <strong>${r.nombre_trabajador}</strong>, con número de empleado <strong>${r.num_empleado}</strong>, trabajador <strong>ACTIVO</strong> <strong>${(r.pos&&r.pos.toLowerCase().includes("poder"))?"del "+r.pos:"de "+(r.adscripcion||"GOBIERNO DEL ESTADO")}</strong>; la cantidad de <strong>$ ${fmt(r.monto)}</strong> (<strong>${r.monto_texto} M.N.</strong>), ${r.descripcion||''}</p>\n      <div style="display:flex;justify-content:space-between;border-top:1px solid #999;padding-top:5px;margin-top:5px;font-weight:bold;">\n        <span>Total Recibido</span><span>$ ${fmt(r.monto)}</span>\n      </div>\n    </div>\n    <div style="margin-top:10px;text-align:center;">\n      <div style="border-top:1.5px solid #333;width:220px;margin:0 auto 6px;"></div>\n      <div style="font-size:11px;margin-bottom:3px;">RECIBIÓ</div>\n      <strong>C.P. MARÍA DEL CONSUELO LLANOS ESQUIVEL</strong><br>\n      <span>TESORERA DEL FONDO DE MUTUALIDAD.</span>\n    </div>\n  </div>`;
   if(r.evidencia){
     // Segunda hoja: media carta con recibo + media carta con evidencia
     const isPdf=r.evidencia.type==='application/pdf';
@@ -1055,7 +1064,7 @@ function verRecibo(num,esS){
           <span>Tepic, Nayarit; ${r.fecha}</span>
         </div>
         <div style="line-height:1.7;font-size:11px;">
-          <p style="text-align:justify;margin:0 0 6px;"><strong>R &nbsp;E &nbsp;C &nbsp;I &nbsp;B &nbsp;I</strong> &nbsp;del C. <strong>${r.nombre_trabajador}</strong>, No.Emp <strong>${r.num_empleado}</strong>, la cantidad de <strong>$ ${fmt(r.monto)}</strong> (<strong>${r.monto_texto} M.N.</strong>), ${r.descripcion||''}. Forma de pago: <strong>${r.forma_pago}</strong>.</p>
+          <p style="text-align:justify;margin:0 0 6px;"><strong>R &nbsp;E &nbsp;C &nbsp;I &nbsp;B &nbsp;I</strong> &nbsp;del C. <strong>${r.nombre_trabajador}</strong>, <strong>DELEGADO DE "${r.seccion}"</strong>, la cantidad de <strong>$ ${fmt(r.monto)}</strong> (<strong>${r.monto_texto} M.N.</strong>), ${r.descripcion||''}. Forma de pago: <strong>${r.forma_pago}</strong>.</p>
           <div style="display:flex;justify-content:space-between;border-top:1px solid #999;padding-top:6px;font-weight:bold;font-size:11px;">
             <span>Total Recibido</span><span>$ ${fmt(r.monto)}</span>
           </div>
@@ -1069,7 +1078,7 @@ function verRecibo(num,esS){
       </div>
       <div id="rh3b">
         <div style="text-align:center;margin-bottom:8px;font-size:11px;font-weight:bold;">COMPROBANTE DE PAGO</div>
-        <div style="font-size:10px;color:#555;text-align:center;margin-bottom:8px;">${r.nombre_trabajador} &bull; No.Emp: ${r.num_empleado} &bull; ${r.fecha}</div>
+        <div style="font-size:10px;color:#555;text-align:center;margin-bottom:8px;">${r.nombre_trabajador} &bull; ${r.fecha}</div>
         <div style="flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;">${evidenciaContent}</div>
       </div>
     </div>`;
@@ -1099,16 +1108,32 @@ function imprimirRecibo(){
 // SECCIONES
 function renderSeccionesAdmin(){
   const L=DB.get('secciones');
-  document.getElementById('tbl-secciones').innerHTML=L.length?L.map(s=>`<tr><td>${s.id}</td><td><strong>${s.nombre}</strong></td><td><button class="btn btn-sm btn-danger" onclick="eliminarSeccion(${s.id})">🗑️</button></td></tr>`).join('')
-    :'<tr><td colspan="3" class="empty-state">Sin secciones</td></tr>';
+  document.getElementById('tbl-secciones').innerHTML=L.length?L.map(s=>`<tr>
+    <td>${s.id}</td>
+    <td><strong>${s.nombre}</strong></td>
+    <td><span style="color:var(--gold2)">${s.delegado||'<span style=\'color:var(--text2);font-style:italic;\'>Sin asignar</span>'}</span></td>
+    <td style="display:flex;gap:4px;">
+      <button class="btn btn-sm btn-primary" onclick="editarDelegado(${s.id})" title="Editar delegado">✏️</button>
+      <button class="btn btn-sm btn-danger" onclick="eliminarSeccion(${s.id})">🗑️</button>
+    </td></tr>`).join('')
+    :'<tr><td colspan="4" class="empty-state">Sin secciones</td></tr>';
 }
 
 function agregarSeccion(){
   const n=document.getElementById('nuevaSeccion').value.trim();if(!n)return;
-  let L=DB.get('secciones');L.push({id:getNextId(L),nombre:n});DB.set('secciones',L);
-  document.getElementById('nuevaSeccion').value='';renderSeccionesAdmin();populateSeccionSelects();
+  const d=document.getElementById('nuevoDelegado').value.trim();
+  let L=DB.get('secciones');L.push({id:getNextId(L),nombre:n,delegado:d});DB.set('secciones',L);
+  document.getElementById('nuevaSeccion').value='';document.getElementById('nuevoDelegado').value='';renderSeccionesAdmin();populateSeccionSelects();
 }
 
+function editarDelegado(id){
+  const L=DB.get('secciones');
+  const s=L.find(x=>x.id===id);if(!s)return;
+  const nuevo=prompt('Nombre del delegado para '+s.nombre+':',s.delegado||'');
+  if(nuevo===null)return;
+  s.delegado=nuevo.trim();
+  DB.set('secciones',L);renderSeccionesAdmin();
+}
 function eliminarSeccion(id){
   if(!confirm('¿Eliminar sección?'))return;
   DB.set('secciones',DB.get('secciones').filter(s=>s.id!==id));renderSeccionesAdmin();populateSeccionSelects();
@@ -1133,7 +1158,6 @@ function renderRecibosSeccion(list){
     <td><strong>${fmtNum(r.num_recibo)}</strong></td>
     <td>${r.seccion}</td>
     <td><strong>${r.nombre_trabajador}</strong></td>
-    <td>${r.num_empleado}</td>
     <td>$${fmt(r.monto)}</td>
     <td>${r.forma_pago}</td>
     <td>${r.fecha}</td>
@@ -1153,22 +1177,28 @@ function filtrarRecibosSeccion(){
 function openModalReciboSeccion(){
   populateSeccionSelects();
   document.getElementById('alertReciboSec').innerHTML='';
-  ['recSecNumEmp','recSecNombre','recSecConcepto'].forEach(id=>document.getElementById(id).value='');
+  ['recSecNombre','recSecConcepto'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('recSecMonto').value='';
   document.getElementById('recSecFormaPago').value='';
   openModal('modalReciboSeccion');
 }
 
+function autocompletarDelegado(){
+  const sec=document.getElementById('recSecSeccion').value;
+  const L=DB.get('secciones');
+  const s=L.find(x=>x.nombre===sec);
+  const campo=document.getElementById('recSecNombre');
+  if(s&&s.delegado)campo.value=s.delegado;
+}
 function guardarReciboSeccion(){
   const sec=document.getElementById('recSecSeccion').value;
-  const ne=document.getElementById('recSecNumEmp').value.trim();
   const nombre=document.getElementById('recSecNombre').value.trim();
   const monto=parseFloat(document.getElementById('recSecMonto').value);
   const fp=document.getElementById('recSecFormaPago').value;
-  if(!sec||!ne||!nombre||!monto||!fp){document.getElementById('alertReciboSec').innerHTML='<div class="alert alert-danger">⚠️ Todos los campos son requeridos.</div>';return;}
+  if(!sec||!nombre||!monto||!fp){document.getElementById('alertReciboSec').innerHTML='<div class="alert alert-danger">⚠️ Todos los campos son requeridos.</div>';return;}
   const num=getNextReciboNum();
   const now=new Date();
-  const r={num_recibo:num,seccion:sec,num_empleado:ne,nombre_trabajador:nombre,monto:monto,monto_texto:monto.toLocaleString('es-MX',{minimumFractionDigits:2})+' M.N.',concepto:document.getElementById('recSecConcepto').value.trim()||'Aportación al Fondo de Mutualidad',forma_pago:fp,fecha:now.toLocaleDateString('es-MX',{day:'2-digit',month:'long',year:'numeric'}),fecha_iso:now.toISOString()};
+  const r={num_recibo:num,seccion:sec,nombre_trabajador:nombre,monto:monto,monto_texto:monto.toLocaleString('es-MX',{minimumFractionDigits:2})+' M.N.',concepto:document.getElementById('recSecConcepto').value.trim()||'Aportación al Fondo de Mutualidad',forma_pago:fp,fecha:now.toLocaleDateString('es-MX',{day:'2-digit',month:'long',year:'numeric'}),fecha_iso:now.toISOString()};
   let L=DB.get('recibos_secciones');L.push(r);DB.set('recibos_secciones',L);
   closeModal('modalReciboSeccion');renderRecibosSeccion();
 }
@@ -1285,6 +1315,32 @@ function exportCSV(){
   document.getElementById('appCapturaMsg').innerHTML='<div class="alert alert-success">✅ Aplicación descargada exitosamente. Envíala a la sección foránea.</div>';
 }
 
+// ═══ MIGRACIÓN DE RECIBOS ═══
+function migrarRecibos(){
+  const trabajadores = DB.get('trabajadores', []);
+  let recibos = DB.get('recibos', []);
+  let actualizados = 0;
+  recibos = recibos.map(r => {
+    // Solo migrar si no tiene pos o adscripcion guardados
+    if (r.pos !== undefined && r.adscripcion !== undefined) return r;
+    const t = trabajadores.find(x => x.id === r.trab_id || x.num_empleado === r.num_empleado);
+    if (!t) return r;
+    actualizados++;
+    return {
+      ...r,
+      pos: r.pos !== undefined ? r.pos : (t.pos || ''),
+      adscripcion: r.adscripcion !== undefined ? r.adscripcion : (t.adscripcion || '')
+    };
+  });
+  DB.set('recibos', recibos);
+  const msg = document.getElementById('migMsg');
+  if (actualizados > 0) {
+    msg.innerHTML = `<span style="color:#22c55e;">✅ Se actualizaron <strong>${actualizados}</strong> recibo(s) correctamente.</span>`;
+  } else {
+    msg.innerHTML = `<span style="color:var(--text2);">ℹ️ Todos los recibos ya estaban actualizados. No hubo cambios.</span>`;
+  }
+}
+
 // ═══ RESPALDO ═══
 function exportarRespaldo(){
   const data={
@@ -1327,7 +1383,7 @@ function importarRespaldo(){
 }
 
 // INIT
-if(!DB.get('secciones').length){DB.set('secciones',[{id:1,nombre:'Sección Norte'},{id:2,nombre:'Sección Sur'},{id:3,nombre:'Tepic Centro'}]);}
+if(!DB.get('secciones').length){DB.set('secciones',[{id:1,nombre:"Acaponeta"},{id:2,nombre:"Ahuacatlán"},{id:3,nombre:"Amatlán de Cañas"},{id:4,nombre:"Bahía de Banderas"},{id:5,nombre:"Compostela"},{id:6,nombre:"Del Nayar"},{id:7,nombre:"Huajicori"},{id:8,nombre:"Ixtlán del Río"},{id:9,nombre:"Jala"},{id:10,nombre:"La Yesca"},{id:11,nombre:"Loreto"},{id:12,nombre:"Rosamorada"},{id:13,nombre:"Ruíz"},{id:14,nombre:"San Blas"},{id:15,nombre:"San Pedro Lagunillas"},{id:16,nombre:"Santa María del Oro"},{id:17,nombre:"Santiago Ixcuintla"},{id:18,nombre:"Tecuala"},{id:19,nombre:"Tuxpan"},{id:20,nombre:"Xalisco"}]);}
 renderDashboard();
   // ═══ TEMAS ═══
   window.setTheme = function(t) {
