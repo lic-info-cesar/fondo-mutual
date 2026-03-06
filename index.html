@@ -345,6 +345,7 @@
 <div class="section" id="sec-secciones">
   <div class="inner-tabs">
     <button class="inner-tab active" onclick="showInnerTab('sip-lista',this)">📋 Recibos de Secciones</button>
+    <button class="inner-tab" onclick="showInnerTab('sip-buscador',this);initBuscadorSec()">🔎 Buscador</button>
     <button class="inner-tab" onclick="showInnerTab('sip-importar',this)">📂 Importar CSV</button>
     <button class="inner-tab" onclick="showInnerTab('sip-admin',this)">🏢 Administrar Secciones</button>
   </div>
@@ -360,6 +361,70 @@
       </div>
     </div>
   </div>
+  <!-- BUSCADOR AVANZADO -->
+  <div class="inner-panel" id="sip-buscador">
+    <div class="card">
+      <div class="card-title">🔎 Buscador de Recibos — Secciones Foráneas</div>
+
+      <!-- FILTROS -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px;">
+        <div class="form-group">
+          <label>Texto libre</label>
+          <input type="text" id="bsq_texto" placeholder="Nombre delegado, sección, descripción..." oninput="buscarRecibosSec()">
+        </div>
+        <div class="form-group">
+          <label>Sección Foránea</label>
+          <select id="bsq_seccion" onchange="buscarRecibosSec()">
+            <option value="">Todas las secciones</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Forma de Pago</label>
+          <select id="bsq_pago" onchange="buscarRecibosSec()">
+            <option value="">Cualquiera</option>
+            <option value="EFECTIVO">Efectivo</option>
+            <option value="TRANSFERENCIA">Transferencia</option>
+            <option value="DEPOSITO">Depósito</option>
+            <option value="TERMINAL">Terminal</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Fecha desde</label>
+          <input type="date" id="bsq_desde" onchange="buscarRecibosSec()">
+        </div>
+        <div class="form-group">
+          <label>Fecha hasta</label>
+          <input type="date" id="bsq_hasta" onchange="buscarRecibosSec()">
+        </div>
+        <div class="form-group">
+          <label>Monto mínimo</label>
+          <input type="number" id="bsq_monto_min" step="0.01" min="0" placeholder="0.00" oninput="buscarRecibosSec()">
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap;">
+        <button class="btn btn-gold" onclick="buscarRecibosSec()">🔍 Buscar</button>
+        <button class="btn btn-secondary" onclick="limpiarBuscadorSec()">✕ Limpiar Filtros</button>
+        <span id="bsq_conteo" style="font-size:12px;color:var(--text2);margin-left:6px;"></span>
+        <button class="btn" style="background:var(--success);margin-left:auto;" id="bsq_btn_imprimir_todos" onclick="imprimirTodosResultadosSec()" style="display:none;">🖨️ Imprimir Todos los Resultados</button>
+      </div>
+
+      <!-- RESULTADOS -->
+      <div id="bsq_resultados"></div>
+
+      <!-- PREVISUALIZACIÓN -->
+      <div id="bsq_preview_area" style="display:none;margin-top:20px;border-top:1px solid var(--border);padding-top:18px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <div style="font-size:14px;font-weight:700;color:var(--gold2);">📄 Previsualización del Recibo</div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-gold" onclick="imprimirPreviewSec()">🖨️ Imprimir Este Recibo</button>
+            <button class="btn btn-secondary" onclick="cerrarPreviewSec()">✕ Cerrar</button>
+          </div>
+        </div>
+        <div id="bsq_preview_content" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px;"></div>
+      </div>
+    </div>
+  </div>
+
   <div class="inner-panel" id="sip-importar">
     <div class="card">
       <div class="card-title">📂 Importar Aportaciones desde CSV</div>
@@ -1133,165 +1198,100 @@ function populateSeccionSelects(){
   ['recSecSeccion'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=opts;});
 }
 
-function renderRecibosSeccion(list){
-  const R=list||DB.get('recibos_secciones');
-  document.getElementById('tbl-rec-secciones').innerHTML=R.length?[...R].sort((a,b)=>b.num_recibo-a.num_recibo).map(r=>`<tr>
-    <td><strong>${fmtNum(r.num_recibo)}</strong></td>
-    <td>${r.seccion}</td>
-    <td><strong>${r.nombre_trabajador}</strong></td>
-    <td>$${fmt(r.monto)}</td>
-    <td>${r.forma_pago}</td>
-    <td>${r.fecha}</td>
-    <td>
-      <button class="btn btn-sm btn-primary" onclick="verRecibo(${r.num_recibo},true)">👁️</button>
-    </td></tr>`).join('')
-    :'<tr><td colspan="8" class="empty-state"><div class="icon">🧾</div>Sin recibos de secciones</td></tr>';
-}
-
-function filtrarRecibosSeccion(){
-  const q=(document.getElementById('busqSeccion').value||'').toLowerCase();
-  let R=DB.get('recibos_secciones');
-  if(q)R=R.filter(r=>(r.nombre_trabajador||'').toLowerCase().includes(q)||(r.num_empleado+'').includes(q)||(r.seccion||'').toLowerCase().includes(q));
-  renderRecibosSeccion(R);
-}
-
-function openModalReciboSeccion(){
-  populateSeccionSelects();
-  document.getElementById('alertReciboSec').innerHTML='';
-  ['recSecNombre','recSecConcepto'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('recSecMonto').value='';
-  document.getElementById('recSecFormaPago').value='';
-  document.getElementById('evidenciaSecGroup').style.display='none';
-  document.getElementById('evidenciaSecPreview').innerHTML='';
-  document.getElementById('evidenciaSecArea').classList.remove('has-file');
-  window._evidenciaSecData=null;
-  openModal('modalReciboSeccion');
-}
-
-function checkFormaPagoSec(){
-  const fp=document.getElementById('recSecFormaPago').value;
-  document.getElementById('evidenciaSecGroup').style.display=(fp&&fp!=='EFECTIVO')?'block':'none';
-}
-
-function handleEvidenciaSecFile(ev){
-  const f=ev.target.files[0];if(!f)return;
-  const r=new FileReader();
-  r.onload=e=>{
-    window._evidenciaSecData={name:f.name,type:f.type,data:e.target.result};
-    document.getElementById('evidenciaSecArea').classList.add('has-file');
-    const isPdf=f.type==='application/pdf';
-    document.getElementById('evidenciaSecPreview').innerHTML=isPdf
-      ?'<div style="padding:10px;background:rgba(255,255,255,.08);border-radius:6px;text-align:center;"><span style="font-size:28px;">📄</span><br><span style="font-size:12px;color:var(--text2)">'+f.name+'</span></div>'
-      :'<img src="'+e.target.result+'" class="file-preview-img">';
-  };
-  r.readAsDataURL(f);
-}
-
-function autocompletarDelegado(){
-  const sec=document.getElementById('recSecSeccion').value;
+function initBuscadorSec(){
+  // Poblar select de secciones
   const L=DB.get('secciones');
-  const s=L.find(x=>x.nombre===sec);
-  const campo=document.getElementById('recSecNombre');
-  if(s&&s.delegado)campo.value=s.delegado;
-}
-function guardarReciboSeccion(){
-  const sec=document.getElementById('recSecSeccion').value;
-  const nombre=document.getElementById('recSecNombre').value.trim();
-  const monto=parseFloat(document.getElementById('recSecMonto').value);
-  const fp=document.getElementById('recSecFormaPago').value;
-  const desc=document.getElementById('recSecConcepto').value.trim();
-  if(!sec||!nombre||!monto||!fp||!desc){document.getElementById('alertReciboSec').innerHTML='<div class="alert alert-danger">⚠️ Todos los campos son requeridos.</div>';return;}
-  const num=getNextReciboSecNum();
-  const now=new Date();
-  const r={num_recibo:num,seccion:sec,nombre_trabajador:nombre,monto:monto,monto_texto:monto.toLocaleString('es-MX',{minimumFractionDigits:2})+' M.N.',concepto:desc,forma_pago:fp,fecha:now.toLocaleDateString('es-MX',{day:'2-digit',month:'long',year:'numeric'}),fecha_iso:now.toISOString(),evidencia:window._evidenciaSecData||null};
-  let L=DB.get('recibos_secciones');L.push(r);DB.set('recibos_secciones',L);
-  closeModal('modalReciboSeccion');renderRecibosSeccion();
+  const sel=document.getElementById('bsq_seccion');
+  if(!sel)return;
+  const cur=sel.value;
+  sel.innerHTML='<option value="">Todas las secciones</option>'+L.map(s=>`<option value="${s.nombre}">${s.nombre}</option>`).join('');
+  if(cur)sel.value=cur;
+  buscarRecibosSec();
 }
 
-// CSV
-function cargarCSV(ev){
-  const f=ev.target.files[0];if(!f)return;
-  const r=new FileReader();
-  r.onload=e=>{
-    const lines=e.target.result.split('\n').filter(l=>l.trim());
-    const data=lines.map(l=>l.split(',').map(c=>c.trim()));
-    const key='_csvDataTemp';window[key]=data;
-    document.getElementById('csvPreview').innerHTML=`<div class="card"><div class="card-title" style="font-size:13px">Vista Previa - ${data.length} registros</div>
-      <div class="table-wrap"><table><thead><tr><th>No.Emp</th><th>Nombre</th><th>Ap.Pat</th><th>Ap.Mat</th><th>Monto</th></tr></thead>
-      <tbody>${data.slice(0,10).map(r=>'<tr>'+r.slice(0,5).map(c=>`<td>${c}</td>`).join('')+'</tr>').join('')}</tbody></table></div>
-      <div class="btn-row"><button class="btn btn-gold" onclick="importarCSVData(window._csvDataTemp)">📥 Importar</button></div></div>`;
-  };r.readAsText(f);
+function limpiarBuscadorSec(){
+  ['bsq_texto','bsq_monto_min'].forEach(id=>document.getElementById(id).value='');
+  ['bsq_seccion','bsq_pago'].forEach(id=>document.getElementById(id).value='');
+  ['bsq_desde','bsq_hasta'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('bsq_resultados').innerHTML='';
+  document.getElementById('bsq_conteo').textContent='';
+  document.getElementById('bsq_btn_imprimir_todos').style.display='none';
+  cerrarPreviewSec();
 }
 
-function importarCSVData(data){
-  const sec=prompt('Nombre de la sección foránea:','Sección Foránea');if(!sec)return;
-  let L=DB.get('recibos_secciones');let cnt=0;
-  data.forEach(row=>{
-    if(row.length>=4){
-      const now=new Date();
-      L.push({num_recibo:getNextReciboSecNum()+cnt,seccion:sec,num_empleado:row[0],nombre_trabajador:(row[2]||'')+' '+(row[3]||'')+' '+(row[1]||''),monto:parseFloat(row[4])||0,monto_texto:'',concepto:'Aportación al Fondo de Mutualidad (CSV)',forma_pago:'TRANSFERENCIA',fecha:now.toLocaleDateString('es-MX',{day:'2-digit',month:'long',year:'numeric'}),fecha_iso:now.toISOString()});
-      cnt++;
-    }
+function buscarRecibosSec(){
+  const texto=(document.getElementById('bsq_texto').value||'').toLowerCase().trim();
+  const secFiltro=document.getElementById('bsq_seccion').value;
+  const pagoFiltro=document.getElementById('bsq_pago').value;
+  const desde=document.getElementById('bsq_desde').value;
+  const hasta=document.getElementById('bsq_hasta').value;
+  const montoMin=parseFloat(document.getElementById('bsq_monto_min').value)||0;
+
+  let R=DB.get('recibos_secciones',[]);
+
+  if(texto) R=R.filter(r=>
+    (r.nombre_trabajador||'').toLowerCase().includes(texto)||
+    (r.seccion||'').toLowerCase().includes(texto)||
+    (r.concepto||r.descripcion||'').toLowerCase().includes(texto)||
+    (r.num_recibo+'').includes(texto)
+  );
+  if(secFiltro) R=R.filter(r=>r.seccion===secFiltro);
+  if(pagoFiltro) R=R.filter(r=>r.forma_pago===pagoFiltro);
+  if(montoMin>0) R=R.filter(r=>r.monto>=montoMin);
+  if(desde) R=R.filter(r=>{
+    if(!r.fecha_iso)return true;
+    return r.fecha_iso.slice(0,10)>=desde;
   });
-  DB.set('recibos_secciones',L);
-  alert('✅ Se importaron '+cnt+' registros.');
-  document.getElementById('csvPreview').innerHTML='<div class="alert alert-success">✅ Importación completada. Revise la pestaña "Recibos de Secciones".</div>';
-}
+  if(hasta) R=R.filter(r=>{
+    if(!r.fecha_iso)return true;
+    return r.fecha_iso.slice(0,10)<=hasta;
+  });
 
+  R=[...R].sort((a,b)=>b.num_recibo-a.num_recibo);
 
+  const conteo=document.getElementById('bsq_conteo');
+  const btnTodos=document.getElementById('bsq_btn_imprimir_todos');
+  conteo.textContent=R.length?`${R.length} recibo(s) encontrado(s)`:'Sin resultados';
+  btnTodos.style.display=R.length?'inline-flex':'none';
 
-// ═══ RESPALDO ═══
-function exportarRespaldo(){
-  const data={
-    version:'1.0',
-    fecha: new Date().toISOString(),
-    trabajadores: DB.get('trabajadores',[]),
-    recibos: DB.get('recibos',[]),
-    recibos_secciones: DB.get('recibos_secciones',[]),
-    secciones: DB.get('secciones',[])
-  };
-  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  const fecha=new Date().toISOString().slice(0,10);
-  a.download='FONDO_MUTUAL_respaldo_'+fecha+'.json';
-  a.click();
-  document.getElementById('respaldoMsg').innerHTML='<div class="alert alert-success">✅ Respaldo exportado correctamente.</div>';
-}
+  window._bsqResultados=R;
 
-function importarRespaldo(){
-  const file=document.getElementById('inputRespaldo').files[0];
-  if(!file){document.getElementById('respaldoMsg').innerHTML='<div class="alert alert-warning">⚠️ Selecciona un archivo JSON.</div>';return;}
-  const reader=new FileReader();
-  reader.onload=function(e){
-    try{
-      const data=JSON.parse(e.target.result);
-      if(!data.trabajadores&&!data.recibos){throw new Error('Archivo inválido');}
-      if(!confirm('⚠️ Esto reemplazará TODOS los datos actuales con los del respaldo.\n¿Continuar?'))return;
-      if(data.trabajadores) DB.set('trabajadores',data.trabajadores);
-      if(data.recibos) DB.set('recibos',data.recibos);
-      if(data.recibos_secciones) DB.set('recibos_secciones',data.recibos_secciones);
-      if(data.secciones) DB.set('secciones',data.secciones);
-      renderDashboard();
-      document.getElementById('respaldoMsg').innerHTML='<div class="alert alert-success">✅ Respaldo importado. Trabajadores: '+data.trabajadores.length+' | Recibos: '+data.recibos.length+'</div>';
-    }catch(err){
-      document.getElementById('respaldoMsg').innerHTML='<div class="alert alert-danger">❌ Error: archivo JSON inválido o corrupto.</div>';
-    }
-  };
-  reader.readAsText(file);
-}
+  if(!R.length){
+    document.getElementById('bsq_resultados').innerHTML=`
+      <div style="text-align:center;padding:30px;color:var(--text2);">
+        <div style="font-size:2.5rem;margin-bottom:8px;">🔍</div>
+        <div>No se encontraron recibos con esos criterios.</div>
+      </div>`;
+    cerrarPreviewSec();
+    return;
+  }
 
-// INIT
-if(!DB.get('secciones').length){DB.set('secciones',[{id:1,nombre:"Acaponeta"},{id:2,nombre:"Ahuacatlán"},{id:3,nombre:"Amatlán de Cañas"},{id:4,nombre:"Bahía de Banderas"},{id:5,nombre:"Compostela"},{id:6,nombre:"Del Nayar"},{id:7,nombre:"Huajicori"},{id:8,nombre:"Ixtlán del Río"},{id:9,nombre:"Jala"},{id:10,nombre:"La Yesca"},{id:11,nombre:"Loreto"},{id:12,nombre:"Rosamorada"},{id:13,nombre:"Ruíz"},{id:14,nombre:"San Blas"},{id:15,nombre:"San Pedro Lagunillas"},{id:16,nombre:"Santa María del Oro"},{id:17,nombre:"Santiago Ixcuintla"},{id:18,nombre:"Tecuala"},{id:19,nombre:"Tuxpan"},{id:20,nombre:"Xalisco"}]);}
-renderDashboard();
-  // ═══ TEMAS ═══
-  window.setTheme = function(t) {
-    document.documentElement.setAttribute('data-theme', t);
-    document.querySelectorAll('.theme-dot').forEach(d => {
-      d.classList.toggle('active', d.dataset.t === t);
-    });
-    localStorage.setItem('fm_theme', t);
-  };
-  const savedTheme = localStorage.getItem('fm_theme');
-  if (savedTheme) setTheme(savedTheme);
-</script></body></html>
+  const total=R.reduce((s,r)=>s+r.monto,0);
+
+  document.getElementById('bsq_resultados').innerHTML=`
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:rgba(212,160,23,0.08);border-bottom:1px solid var(--border);">
+        <span style="font-size:12px;font-weight:700;color:var(--gold2);">RESULTADOS (${R.length})</span>
+        <span style="font-size:13px;font-weight:700;color:var(--success);">Total: $ ${fmt(total)}</span>
+      </div>
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:12px;">
+          <thead><tr style="background:var(--surface);">
+            <th style="padding:9px 10px;text-align:left;color:var(--text2);font-weight:600;border-bottom:1px solid var(--border);">No.</th>
+            <th style="padding:9px 10px;text-align:left;color:var(--text2);font-weight:600;border-bottom:1px solid var(--border);">Sección</th>
+            <th style="padding:9px 10px;text-align:left;color:var(--text2);font-weight:600;border-bottom:1px solid var(--border);">Delegado</th>
+            <th style="padding:9px 10px;text-align:left;color:var(--text2);font-weight:600;border-bottom:1px solid var(--border);">Monto</th>
+            <th style="padding:9px 10px;text-align:left;color:var(--text2);font-weight:600;border-bottom:1px solid var(--border);">Pago</th>
+            <th style="padding:9px 10px;text-align:left;color:var(--text2);font-weight:600;border-bottom:1px solid var(--border);">Fecha</th>
+            <th style="padding:9px 10px;text-align:left;color:var(--text2);font-weight:600;border-bottom:1px solid var(--border);">Acciones</th>
+          </tr></thead>
+          <tbody>
+            ${R.map((r,i)=>`<tr id="bsq_row_${r.num_recibo}" style="border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s;" onmouseover="this.style.background='rgba(255,215,0,0.04)'" onmouseout="this.style.background=''" onclick="previewReciboSec(${r.num_recibo})">
+              <td style="padding:9px 10px;font-weight:700;color:var(--accent3);">${fmtNum(r.num_recibo)}</td>
+              <td style="padding:9px 10px;">${r.seccion}</td>
+              <td style="padding:9px 10px;font-weight:600;">${r.nombre_trabajador}</td>
+              <td style="padding:9px 10px;font-weight:700;color:var(--success);">$${fmt(r.monto)}</td>
+              <td style="padding:9px 10px;"><span style="background:${r.forma_pago==='EFECTIVO'?'rgba(63,185,80,.15)':'rgba(88,166,255,.15)'};color:${r.forma_pago==='EFECTIVO'?'var(--success)':'var(--accent3)'};padding:2px 8px;border-radius:12px;font-size:11px;">${r.forma_pago}</span></td>
+              <td style="padding:9px 10px;color:var(--text2);">${r.fecha}</td>
+              <td style="padding:9px 10px;" onclick="event.stopPropagation()">
+                <div style="display:flex;gap:6px;">
