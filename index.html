@@ -260,7 +260,7 @@
   <button class="nav-btn" onclick="showSection('trabajadores')" data-sec="trabajadores">👥 Trabajadores</button>
   <button class="nav-btn" onclick="showSection('recibos')" data-sec="recibos">🧾 Recibos</button>
   <button class="nav-btn" onclick="showSection('secciones')" data-sec="secciones">🏢 Secciones Foráneas</button>
-
+  <button class="nav-btn" onclick="showSection('trab-foraneos')" data-sec="trab-foraneos">🚌 Trabajadores Foráneos</button>
   <button class="nav-btn" onclick="showSection('respaldo')" data-sec="respaldo">💾 Respaldo</button>
 </div>
 
@@ -451,6 +451,70 @@
 </div>
 
 
+<!-- TRABAJADORES FORÁNEOS -->
+<div class="section" id="sec-trab-foraneos">
+  <div class="inner-tabs">
+    <button class="inner-tab active" onclick="showInnerTab('tf-trabajadores',this);renderTrabForaneos()">👥 Trabajadores Foráneos</button>
+    <button class="inner-tab" onclick="showInnerTab('tf-recibos',this);renderRecibosForaneos()">🧾 Recibos Foráneos</button>
+  </div>
+
+  <!-- TAB: TRABAJADORES FORÁNEOS -->
+  <div class="inner-panel active" id="tf-trabajadores">
+    <div class="card">
+      <div class="card-title">🚌 Registro de Trabajadores Foráneos</div>
+      <div class="search-bar">
+        <input type="text" id="busqTrabF" placeholder="🔍 Buscar por nombre, No. empleado, sección..." oninput="filtrarTrabForaneos()">
+        <select id="filtroPosF" onchange="filtrarTrabForaneos()" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:9px 12px;">
+          <option value="">Todas las Secciones</option>
+        </select>
+        <select id="filtroEstatusF" onchange="filtrarTrabForaneos()" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:9px 12px;">
+          <option value="">Todos</option>
+          <option value="ACTIVO">Activo</option>
+          <option value="BAJA">Baja</option>
+          <option value="SUSPENDIDO">Suspendido</option>
+        </select>
+        <button class="btn btn-gold" onclick="openModalTrabForaneo()">➕ Nuevo Trabajador</button>
+        <button class="btn btn-secondary" onclick="openModalReportesForaneos()" style="background:#1a3a5c;border:1px solid #2196f3;color:#64b5f6;">📊 Crear Reporte</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>ID</th><th>No.Emp</th><th>Nombre Completo</th><th>Sección</th><th>Adscripción</th><th>Ingreso</th><th>Estatus</th><th>Acciones</th></tr></thead>
+          <tbody id="tbl-trab-foraneos"></tbody>
+        </table>
+      </div>
+      <div id="panelDetalleTrabF" style="display:none;margin-top:20px;background:linear-gradient(135deg,#1f0d0d,#1a0d2e);border:1px solid var(--gold2);border-radius:10px;padding:20px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <div style="color:var(--gold2);font-size:15px;font-weight:700;">🪪 Detalle del Trabajador Foráneo</div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-primary" id="btnEditarDetalleF" onclick="">✏️ Editar</button>
+            <button class="btn btn-secondary" onclick="cerrarDetalleTrabF()" style="padding:6px 14px;font-size:12px;">✕ Cerrar</button>
+          </div>
+        </div>
+        <div id="detalleTrabFContenido"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: RECIBOS FORÁNEOS -->
+  <div class="inner-panel" id="tf-recibos">
+    <div class="card">
+      <div class="card-title">🧾 Recibos de Trabajadores Foráneos</div>
+      <div class="search-bar">
+        <input type="text" id="busqReciboF" placeholder="🔍 Buscar trabajador foráneo por nombre o No. empleado...">
+        <button class="btn btn-gold" onclick="buscarTrabForaneoParaRecibo()">🔍 Buscar</button>
+        <button class="btn btn-secondary" onclick="renderRecibosForaneos()">📋 Ver Todos</button>
+      </div>
+      <div id="resultBusqTrabF" style="margin-bottom:16px;"></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>No. Recibo</th><th>Trabajador</th><th>No.Emp</th><th>Monto</th><th>Forma Pago</th><th>Fecha</th><th>Evidencia</th><th>Acciones</th></tr></thead>
+          <tbody id="tbl-recibos-foraneos"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="section" id="sec-respaldo">
   <div class="card">
     <div class="card-title">💾 Respaldo de Datos</div>
@@ -627,6 +691,130 @@
   </div>
 </div>
 
+<!-- MODAL TRABAJADOR FORÁNEO -->
+<div class="modal-overlay" id="modalTrabForaneo">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modalTrabForaneo')">✕</button>
+    <div class="modal-title" id="modalTrabFTitle">➕ Nuevo Trabajador Foráneo</div>
+    <div id="alertTrabF"></div>
+    <div class="form-grid">
+      <input type="hidden" id="trabFId">
+      <div class="form-group"><label>No. Empleado *</label><input type="text" id="trabFNumEmp" placeholder="Ej: 62511"></div>
+      <div class="form-group"><label>Nombre(s) *</label><input type="text" id="trabFNombre"></div>
+      <div class="form-group"><label>Apellido Paterno *</label><input type="text" id="trabFApaterno"></div>
+      <div class="form-group"><label>Apellido Materno</label><input type="text" id="trabFAmaterno"></div>
+      <div class="form-group">
+        <label>Sección *</label>
+        <select id="trabFPos">
+          <option value="">Seleccionar sección...</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Adscripción</label><input type="text" id="trabFAdscripcion"></div>
+      <div class="form-group"><label>Fecha de Ingreso</label><input type="date" id="trabFFechaIngreso"></div>
+      <div class="form-group">
+        <label>Estatus *</label>
+        <select id="trabFEstatus" onchange="checkEstatusF()">
+          <option value="ACTIVO">Activo</option>
+          <option value="BAJA">Baja</option>
+          <option value="SUSPENDIDO">Suspendido</option>
+        </select>
+      </div>
+      <div class="obs-group form-group full" id="obsGroupF">
+        <label>Observaciones (requerido para Baja/Suspendido)</label>
+        <textarea id="trabFObs" placeholder="Motivo de baja o suspensión..."></textarea>
+      </div>
+      <div class="form-group full">
+        <label>Archivo Adjunto (PDF o Imagen)</label>
+        <div class="file-upload-area" id="trabFFileArea" onclick="document.getElementById('trabFFile').click()">
+          <div>📎 Haz clic para adjuntar documento</div>
+          <div style="font-size:11px;color:var(--text2)">PDF, JPG, PNG</div>
+          <input type="file" id="trabFFile" accept=".pdf,.jpg,.jpeg,.png" onchange="handleTrabFFile(event)">
+        </div>
+        <div id="trabFFileInfo" style="margin-top:6px;font-size:12px;color:var(--text2);"></div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-gold" onclick="guardarTrabForaneo()">💾 Guardar</button>
+      <button class="btn btn-secondary" onclick="closeModal('modalTrabForaneo')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL RECIBO TRABAJADOR FORÁNEO -->
+<div class="modal-overlay" id="modalReciboForaneo">
+  <div class="modal" style="max-width:800px;">
+    <button class="modal-close" onclick="closeModal('modalReciboForaneo')">✕</button>
+    <div class="modal-title">🧾 Crear Recibo — Trabajador Foráneo</div>
+    <div id="alertReciboF"></div>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:12px;margin-bottom:16px;">
+      <strong style="color:var(--gold2)">Trabajador: </strong><span id="trabFSelNombre">-</span>
+      <span style="margin-left:12px;color:var(--text2)">No.Emp: </span><span id="trabFSelNum">-</span>
+      <span style="margin-left:12px;color:var(--text2)">Sección: </span><span id="trabFSelDep">-</span>
+    </div>
+    <div class="form-grid">
+      <input type="hidden" id="reciboFTrabId">
+      <div class="form-group"><label>No. Recibo</label><input type="text" id="reciboFNum" readonly style="background:rgba(255,255,255,.05)"></div>
+      <div class="form-group"><label>Fecha</label><input type="text" id="reciboFFecha" readonly style="background:rgba(255,255,255,.05)"></div>
+      <div class="form-group"><label>Monto *</label><input type="number" id="reciboFMonto" step="0.01" min="0" placeholder="0.00"></div>
+      <div class="form-group"><label>Monto en Texto *</label><input type="text" id="reciboFMontoTexto" placeholder="Ej: Doscientos pesos 00/100 M.N."></div>
+      <div class="form-group full">
+        <label>Descripción *</label>
+        <textarea id="reciboFDescripcion" rows="3" placeholder="Ej: como pago de aportación al Fondo de Mutualidad correspondiente a la 1ra. Quincena de Marzo de 2026." style="resize:vertical;width:100%;box-sizing:border-box;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px;color:var(--text1);font-family:inherit;font-size:13px;"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Forma de Pago *</label>
+        <select id="reciboFFormaPago" onchange="checkFormaPagoF()">
+          <option value="">Seleccionar...</option>
+          <option value="EFECTIVO">Efectivo</option>
+          <option value="TRANSFERENCIA">Transferencia Bancaria</option>
+          <option value="DEPOSITO">Depósito</option>
+          <option value="TERMINAL">Terminal Bancaria</option>
+        </select>
+      </div>
+      <div class="form-group full" id="evidenciaGroupF" style="display:none;">
+        <label>Comprobante de Pago</label>
+        <div class="file-upload-area" id="evidenciaFArea" onclick="document.getElementById('evidenciaFFile').click()">
+          <div>📷 Adjuntar comprobante</div>
+          <div style="font-size:11px;color:var(--text2)">JPG, PNG o PDF</div>
+          <input type="file" id="evidenciaFFile" accept=".jpg,.jpeg,.png,.pdf" onchange="handleEvidenciaFFile(event)">
+        </div>
+        <div id="evidenciaFPreview"></div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-gold" onclick="guardarReciboForaneo()">💾 Guardar Recibo</button>
+      <button class="btn btn-secondary" onclick="closeModal('modalReciboForaneo')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL REPORTES FORÁNEOS -->
+<div class="modal-overlay" id="modalReportesForaneos">
+  <div class="modal" style="max-width:960px;max-height:90vh;overflow-y:auto;">
+    <button class="modal-close" onclick="closeModal('modalReportesForaneos')">✕</button>
+    <div class="modal-title">📊 Crear Reporte — Trabajadores Foráneos</div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;align-items:center;">
+      <label style="color:var(--gold2);font-weight:600;">Tipo de Reporte:</label>
+      <select id="tipoReporteF" onchange="generarReporteForaneos()" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:9px 14px;min-width:200px;">
+        <option value="">-- Seleccionar --</option>
+        <option value="dependencia">Por Dependencia</option>
+        <option value="adscripcion">Por Adscripción</option>
+        <option value="pos">Por P.O.S</option>
+        <option value="estatus">Por Estatus</option>
+      </select>
+      <select id="filtroReporteEstatusF" onchange="generarReporteForaneos()" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:9px 14px;">
+        <option value="">Todos los Estatus</option>
+        <option value="ACTIVO">Solo Activos</option>
+        <option value="BAJA">Solo Bajas</option>
+        <option value="SUSPENDIDO">Solo Suspendidos</option>
+      </select>
+      <button class="btn btn-primary" onclick="imprimirReporteF()" style="margin-left:auto;">🖨️ Imprimir</button>
+      <button class="btn btn-secondary" onclick="closeModal('modalReportesForaneos')">Cerrar</button>
+    </div>
+    <div id="reporteFContenido"></div>
+  </div>
+</div>
+
 <!-- MODAL VER RECIBO -->
 <div class="modal-overlay" id="modalVerRecibo">
   <div class="modal" style="max-width:900px;">
@@ -687,10 +875,12 @@ function showSection(id){
   if(id==='trabajadores')renderTrabajadores();
   if(id==='recibos'){renderRecibos();document.getElementById('resultBusqTrab').innerHTML='';}
   if(id==='secciones'){renderRecibosSeccion();renderSeccionesAdmin();populateSeccionSelects();}
+  if(id==='trab-foraneos'){populateSeccionesForaneas();renderTrabForaneos();}
 
   if(id==='respaldo'){
     const t=DB.get('trabajadores',[]);const r=DB.get('recibos',[]);const s=DB.get('secciones',[]);const rs=DB.get('recibos_secciones',[]);
-    document.getElementById('respaldoStats').innerHTML='👥 Trabajadores: <b>'+t.length+'</b> &nbsp;|&nbsp; 🧾 Recibos: <b>'+r.length+'</b> &nbsp;|&nbsp; 🏢 Secciones: <b>'+s.length+'</b> &nbsp;|&nbsp; 📋 Recibos Foráneos: <b>'+rs.length+'</b>';
+    const tf=DB.get('trabajadores_foraneos',[]);const rf=DB.get('recibos_foraneos',[]);
+    document.getElementById('respaldoStats').innerHTML='👥 Trabajadores: <b>'+t.length+'</b> &nbsp;|&nbsp; 🧾 Recibos: <b>'+r.length+'</b> &nbsp;|&nbsp; 🏢 Secciones: <b>'+s.length+'</b> &nbsp;|&nbsp; 📋 Recibos Secciones: <b>'+rs.length+'</b> &nbsp;|&nbsp; 🚌 Trab. Foráneos: <b>'+tf.length+'</b> &nbsp;|&nbsp; 🧾 Recibos Foráneos: <b>'+rf.length+'</b>';
   }
 }
 function showInnerTab(id,btn){
@@ -710,16 +900,21 @@ function badgeEst(e){return `<span class="badge badge-${e==='ACTIVO'?'success':e
 
 function renderDashboard(){
   const T=DB.get('trabajadores'),R=DB.get('recibos'),RS=DB.get('recibos_secciones');
+  const TF=DB.get('trabajadores_foraneos'),RF=DB.get('recibos_foraneos');
   const activos=T.filter(t=>t.estatus==='ACTIVO').length;
+  const activosF=TF.filter(t=>t.estatus==='ACTIVO').length;
   const totalMontoT=R.reduce((s,r)=>s+(parseFloat(r.monto)||0),0);
   const totalMontoS=RS.reduce((s,r)=>s+(parseFloat(r.monto)||0),0);
+  const totalMontoF=RF.reduce((s,r)=>s+(parseFloat(r.monto)||0),0);
   document.getElementById('statsGrid').innerHTML=`
     <div class="stat-card"><div class="stat-val">${T.length}</div><div class="stat-label">Total Trabajadores</div></div>
     <div class="stat-card"><div class="stat-val">${activos}</div><div class="stat-label">Activos</div></div>
     <div class="stat-card"><div class="stat-val">${R.length}</div><div class="stat-label">Recibos Trabajadores</div></div>
     <div class="stat-card"><div class="stat-val">$${fmt(totalMontoT)}</div><div class="stat-label">Recaudado Trabajadores</div></div>
     <div class="stat-card"><div class="stat-val">${RS.length}</div><div class="stat-label">Recibos Secciones</div></div>
-    <div class="stat-card"><div class="stat-val">$${fmt(totalMontoS)}</div><div class="stat-label">Recaudado Secciones</div></div>`;
+    <div class="stat-card"><div class="stat-val">$${fmt(totalMontoS)}</div><div class="stat-label">Recaudado Secciones</div></div>
+    <div class="stat-card"><div class="stat-val">${TF.length}</div><div class="stat-label">Trabajadores Foráneos</div></div>
+    <div class="stat-card"><div class="stat-val">$${fmt(totalMontoF)}</div><div class="stat-label">Recaudado Foráneos</div></div>`;
   document.getElementById('tbl-ult-trab').innerHTML=[...T].reverse().slice(0,5).map(t=>`<tr>
     <td><strong>${t.num_empleado}</strong></td>
     <td>${t.apellido_paterno} ${t.apellido_materno||''} ${t.nombre}</td>
@@ -897,8 +1092,9 @@ function guardarTrabajador(){
   if(!numEmp||!nombre||!apat){document.getElementById('alertTrab').innerHTML='<div class="alert alert-danger">⚠️ Número de empleado, nombre y apellido paterno son requeridos.</div>';return;}
   if((est==='BAJA'||est==='SUSPENDIDO')&&!document.getElementById('trabObs').value.trim()){document.getElementById('alertTrab').innerHTML='<div class="alert alert-danger">⚠️ Observaciones requeridas para Baja/Suspendido.</div>';return;}
   let L=DB.get('trabajadores');
-  const dup=L.find(t=>t.num_empleado===numEmp&&(!id||t.id!==parseInt(id)));
-  if(dup){document.getElementById('alertTrab').innerHTML='<div class="alert alert-danger">⚠️ Ya existe un trabajador con ese número de empleado.</div>';return;}
+  const posVal=document.getElementById('trabPos').value;
+  const dup=L.find(t=>t.num_empleado===numEmp&&t.pos===posVal&&(!id||t.id!==parseInt(id)));
+  if(dup){document.getElementById('alertTrab').innerHTML='<div class="alert alert-danger">⚠️ Ya existe un trabajador con ese número de empleado en '+posVal+'.</div>';return;}
   const obj={id:id?parseInt(id):getNextId(L),num_empleado:numEmp,nombre:nombre,apellido_paterno:apat,apellido_materno:document.getElementById('trabAmaterno').value.trim(),pos:document.getElementById('trabPos').value,adscripcion:document.getElementById('trabAdscripcion').value.trim(),dependencia:document.getElementById('trabDependencia').value.trim(),fecha_ingreso:document.getElementById('trabFechaIngreso').value,estatus:est,observaciones:document.getElementById('trabObs').value.trim(),archivo:window._trabFileData||null,fecha_registro:id?(L.find(t=>t.id===parseInt(id))?.fecha_registro||new Date().toISOString()):new Date().toISOString()};
   if(id){const i=L.findIndex(t=>t.id===parseInt(id));L[i]=obj;}else L.push(obj);
   DB.set('trabajadores',L);
@@ -1529,15 +1725,346 @@ function importarCSVData(data){
 
 
 
+// ═══ TRABAJADORES FORÁNEOS ═══
+function getNextReciboForaneoNum(){const a=DB.get('recibos_foraneos');if(!a.length)return 1;return Math.max(...a.map(r=>parseInt(r.num_recibo)||0))+1}
+
+function renderTrabForaneos(list){
+  const L=list||DB.get('trabajadores_foraneos');
+  document.getElementById('tbl-trab-foraneos').innerHTML=L.length?L.map(t=>`<tr style="cursor:pointer;" onclick="verDetalleTrabForaneo(${t.id})" id="fila-trabf-${t.id}">
+    <td>${t.id}</td><td><strong>${t.num_empleado}</strong></td>
+    <td><strong>${t.apellido_paterno} ${t.apellido_materno||''} ${t.nombre}</strong></td>
+    <td><span style="font-size:11px">${t.pos||'-'}</span></td>
+    <td>${t.adscripcion||'-'}</td>
+    <td>${t.fecha_ingreso||'-'}</td><td>${badgeEst(t.estatus)}</td>
+    <td onclick="event.stopPropagation()">
+      <button class="btn btn-sm btn-primary" onclick="editarTrabForaneo(${t.id})">✏️</button>
+      <button class="btn btn-sm btn-gold" onclick="crearReciboForaneoDesde(${t.id})">🧾</button>
+    </td></tr>`).join('')
+    :'<tr><td colspan="8" class="empty-state"><div class="icon">🚌</div>Sin trabajadores foráneos registrados</td></tr>';
+}
+
+function verDetalleTrabForaneo(id){
+  const t=DB.get('trabajadores_foraneos').find(x=>x.id===id);if(!t)return;
+  document.querySelectorAll('#tbl-trab-foraneos tr').forEach(r=>r.style.background='');
+  const fila=document.getElementById('fila-trabf-'+id);
+  if(fila)fila.style.background='rgba(212,160,23,.15)';
+  const ec={ACTIVO:'#4caf50',BAJA:'#f44336',SUSPENDIDO:'#ff9800'};
+  const nombre=`${t.apellido_paterno||''} ${t.apellido_materno||''} ${t.nombre||''}`.trim();
+  const campo=(l,v)=>`<div style="min-width:180px;flex:1;"><div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;">${l}</div><div style="font-size:13px;color:var(--text);font-weight:500;">${v||'—'}</div></div>`;
+  document.getElementById('detalleTrabFContenido').innerHTML=`
+    <div style="display:flex;flex-wrap:wrap;gap:16px 24px;padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:16px;">
+      <div style="min-width:180px;flex:1;"><div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;">No. Empleado</div><div style="font-size:22px;color:var(--gold2);font-weight:700;">${t.num_empleado||'—'}</div></div>
+      <div style="min-width:260px;flex:2;"><div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;">Nombre Completo</div><div style="font-size:18px;color:var(--text);font-weight:700;">${nombre}</div></div>
+      <div style="min-width:140px;"><div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Estatus</div><span style="background:${ec[t.estatus]||'#666'};color:#fff;border-radius:14px;padding:5px 18px;font-size:13px;font-weight:700;">${t.estatus||'—'}</span></div>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:16px 24px;padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:16px;">
+      ${campo('Sección',t.pos)}${campo('Adscripción',t.adscripcion)}${campo('Fecha de Ingreso al SUTSEM',t.fecha_ingreso)}
+    </div>
+    ${t.observaciones?`<div style="margin-top:16px;padding:12px;background:rgba(0,0,0,.2);border-radius:6px;border-left:3px solid var(--gold2);"><div style="font-size:10px;color:var(--text2);text-transform:uppercase;margin-bottom:4px;">Observaciones</div><div style="font-size:13px;">${t.observaciones}</div></div>`:''}
+    ${t.archivo?(()=>{
+      const arch=t.archivo;
+      const esPDF=arch.type==='application/pdf'||arch.name?.toLowerCase().endsWith('.pdf');
+      if(esPDF){return `<div style="margin-top:16px;"><div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">📎 Archivo Adjunto</div><div style="background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:8px;padding:0;overflow:hidden;"><div style="padding:10px 14px;background:rgba(255,255,255,.05);display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);"><span style="font-size:20px;">📄</span><span style="font-size:13px;color:var(--text);">${arch.name||'documento.pdf'}</span><button onclick="verArchivoPDF('${encodeURIComponent(JSON.stringify({name:arch.name,data:arch.data}))}') " style="margin-left:auto;background:#1565c0;border:none;color:#fff;padding:5px 14px;border-radius:5px;cursor:pointer;font-size:12px;">👁️ Ver PDF</button><a href="${arch.data}" download="${arch.name||'documento.pdf'}" style="background:#2e7d32;border:none;color:#fff;padding:5px 14px;border-radius:5px;cursor:pointer;font-size:12px;text-decoration:none;">⬇️ Descargar</a></div><iframe src="${arch.data}" style="width:100%;height:420px;border:none;display:block;" title="Vista previa PDF"></iframe></div></div>`;}
+      else{return `<div style="margin-top:16px;"><div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">🖼️ Imagen Adjunta</div><div style="background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:8px;overflow:hidden;"><div style="padding:8px 14px;background:rgba(255,255,255,.05);display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);"><span style="font-size:13px;color:var(--text);">🖼️ ${arch.name||'imagen'}</span><a href="${arch.data}" download="${arch.name||'imagen'}" style="margin-left:auto;background:#2e7d32;border:none;color:#fff;padding:5px 14px;border-radius:5px;cursor:pointer;font-size:12px;text-decoration:none;">⬇️ Descargar</a><a href="${arch.data}" target="_blank" style="background:#1565c0;border:none;color:#fff;padding:5px 14px;border-radius:5px;cursor:pointer;font-size:12px;text-decoration:none;">🔍 Abrir</a></div><div style="text-align:center;padding:12px;background:#000;"><img src="${arch.data}" style="max-width:100%;max-height:400px;border-radius:4px;object-fit:contain;" alt="Documento adjunto"></div></div></div>`;}
+    })():''}`;
+  document.getElementById('btnEditarDetalleF').onclick=()=>editarTrabForaneo(id);
+  const panel=document.getElementById('panelDetalleTrabF');
+  panel.style.display='block';
+  setTimeout(()=>panel.scrollIntoView({behavior:'smooth',block:'nearest'}),50);
+}
+
+function cerrarDetalleTrabF(){
+  document.getElementById('panelDetalleTrabF').style.display='none';
+  document.querySelectorAll('#tbl-trab-foraneos tr').forEach(r=>r.style.background='');
+}
+
+function filtrarTrabForaneos(){
+  const q=(document.getElementById('busqTrabF').value||'').toLowerCase();
+  const pos=document.getElementById('filtroPosF').value;
+  const est=document.getElementById('filtroEstatusF').value;
+  let L=DB.get('trabajadores_foraneos');
+  if(q)L=L.filter(t=>(t.num_empleado+'').includes(q)||(t.nombre||'').toLowerCase().includes(q)||(t.apellido_paterno||'').toLowerCase().includes(q)||(t.apellido_materno||'').toLowerCase().includes(q)||(t.pos||'').toLowerCase().includes(q));
+  if(pos)L=L.filter(t=>t.pos===pos);
+  if(est)L=L.filter(t=>t.estatus===est);
+  cerrarDetalleTrabF();
+  renderTrabForaneos(L);
+}
+
+function populateSeccionesForaneas(){
+  // Obtiene secciones del catálogo registrado en "Secciones Foráneas"
+  const secciones=DB.get('secciones',[]).map(s=>s.nombre).filter(Boolean).sort();
+  // Select del modal
+  const selModal=document.getElementById('trabFPos');
+  const valModal=selModal.value;
+  selModal.innerHTML='<option value="">Seleccionar sección...</option>'+secciones.map(s=>`<option value="${s}">${s}</option>`).join('');
+  if(valModal)selModal.value=valModal;
+  // Select del filtro
+  const selFiltro=document.getElementById('filtroPosF');
+  const valFiltro=selFiltro.value;
+  selFiltro.innerHTML='<option value="">Todas las Secciones</option>'+secciones.map(s=>`<option value="${s}">${s}</option>`).join('');
+  if(valFiltro)selFiltro.value=valFiltro;
+}
+
+function openModalTrabForaneo(){
+  populateSeccionesForaneas();
+  ['trabFId','trabFNumEmp','trabFNombre','trabFApaterno','trabFAmaterno','trabFAdscripcion','trabFFechaIngreso','trabFObs'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('trabFPos').value='';
+  document.getElementById('trabFEstatus').value='ACTIVO';
+  document.getElementById('obsGroupF').classList.remove('visible');
+  document.getElementById('trabFFileInfo').textContent='';
+  document.getElementById('trabFFileArea').classList.remove('has-file');
+  document.getElementById('alertTrabF').innerHTML='';
+  document.getElementById('modalTrabFTitle').textContent='➕ Nuevo Trabajador Foráneo';
+  window._trabFFileData=null;
+  openModal('modalTrabForaneo');
+}
+
+function editarTrabForaneo(id){
+  populateSeccionesForaneas();
+  const t=DB.get('trabajadores_foraneos').find(x=>x.id===id);if(!t)return;
+  document.getElementById('trabFId').value=t.id;
+  document.getElementById('trabFNumEmp').value=t.num_empleado;
+  document.getElementById('trabFNombre').value=t.nombre;
+  document.getElementById('trabFApaterno').value=t.apellido_paterno;
+  document.getElementById('trabFAmaterno').value=t.apellido_materno||'';
+  document.getElementById('trabFPos').value=t.pos||'';
+  document.getElementById('trabFAdscripcion').value=t.adscripcion||'';
+  document.getElementById('trabFFechaIngreso').value=t.fecha_ingreso||'';
+  document.getElementById('trabFEstatus').value=t.estatus||'ACTIVO';
+  document.getElementById('trabFObs').value=t.observaciones||'';
+  checkEstatusF();
+  document.getElementById('alertTrabF').innerHTML='';
+  document.getElementById('modalTrabFTitle').textContent='✏️ Editar Trabajador Foráneo';
+  window._trabFFileData=t.archivo||null;
+  document.getElementById('trabFFileInfo').textContent=t.archivo?'📎 Archivo adjunto existente':'';
+  if(t.archivo)document.getElementById('trabFFileArea').classList.add('has-file');
+  else document.getElementById('trabFFileArea').classList.remove('has-file');
+  openModal('modalTrabForaneo');
+}
+
+function checkEstatusF(){
+  const e=document.getElementById('trabFEstatus').value;
+  document.getElementById('obsGroupF').classList[e==='BAJA'||e==='SUSPENDIDO'?'add':'remove']('visible');
+}
+
+function handleTrabFFile(ev){
+  const f=ev.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=e=>{window._trabFFileData={name:f.name,type:f.type,data:e.target.result};document.getElementById('trabFFileInfo').textContent='📎 '+f.name+' ('+(f.size/1024).toFixed(1)+' KB)';document.getElementById('trabFFileArea').classList.add('has-file');};
+  r.readAsDataURL(f);
+}
+
+function guardarTrabForaneo(){
+  const id=document.getElementById('trabFId').value;
+  const numEmp=document.getElementById('trabFNumEmp').value.trim();
+  const nombre=document.getElementById('trabFNombre').value.trim();
+  const apat=document.getElementById('trabFApaterno').value.trim();
+  const est=document.getElementById('trabFEstatus').value;
+  if(!numEmp||!nombre||!apat){document.getElementById('alertTrabF').innerHTML='<div class="alert alert-danger">⚠️ Número de empleado, nombre y apellido paterno son requeridos.</div>';return;}
+  if((est==='BAJA'||est==='SUSPENDIDO')&&!document.getElementById('trabFObs').value.trim()){document.getElementById('alertTrabF').innerHTML='<div class="alert alert-danger">⚠️ Observaciones requeridas para Baja/Suspendido.</div>';return;}
+  let L=DB.get('trabajadores_foraneos');
+  const posVal=document.getElementById('trabFPos').value;
+  const dup=L.find(t=>t.num_empleado===numEmp&&(!id||t.id!==parseInt(id)));
+  if(dup){document.getElementById('alertTrabF').innerHTML='<div class="alert alert-danger">⚠️ Ya existe un trabajador foráneo con ese número de empleado.</div>';return;}
+  const obj={id:id?parseInt(id):getNextId(L),num_empleado:numEmp,nombre:nombre,apellido_paterno:apat,apellido_materno:document.getElementById('trabFAmaterno').value.trim(),pos:document.getElementById('trabFPos').value,adscripcion:document.getElementById('trabFAdscripcion').value.trim(),fecha_ingreso:document.getElementById('trabFFechaIngreso').value,estatus:est,observaciones:document.getElementById('trabFObs').value.trim(),archivo:window._trabFFileData||null,fecha_registro:id?(L.find(t=>t.id===parseInt(id))?.fecha_registro||new Date().toISOString()):new Date().toISOString()};
+  if(id){const i=L.findIndex(t=>t.id===parseInt(id));L[i]=obj;}else L.push(obj);
+  DB.set('trabajadores_foraneos',L);
+  closeModal('modalTrabForaneo');
+  renderTrabForaneos();
+}
+
+function eliminarTrabForaneo(id){if(!confirm('¿Eliminar trabajador foráneo?'))return;DB.set('trabajadores_foraneos',DB.get('trabajadores_foraneos').filter(t=>t.id!==id));renderTrabForaneos();}
+
+// RECIBOS FORÁNEOS
+function renderRecibosForaneos(list){
+  const R=list||DB.get('recibos_foraneos');
+  document.getElementById('tbl-recibos-foraneos').innerHTML=R.length?[...R].sort((a,b)=>b.num_recibo-a.num_recibo).map(r=>`<tr>
+    <td><strong>${fmtNum(r.num_recibo)}</strong></td>
+    <td>${r.nombre_trabajador||'-'}</td>
+    <td><strong>${r.num_empleado||'-'}</strong></td>
+    <td><strong style="color:var(--success)">$${fmt(r.monto)}</strong></td>
+    <td>${r.forma_pago}</td>
+    <td>${r.fecha}</td>
+    <td>${r.evidencia?'<span style="color:var(--success)">✅</span>':'<span style="color:var(--text2)">—</span>'}</td>
+    <td>
+      <button class="btn btn-sm btn-primary" onclick="verReciboForaneo(${r.num_recibo})">👁️</button>
+      <button class="btn btn-sm btn-danger" onclick="eliminarReciboForaneo(${r.num_recibo})">🗑️</button>
+    </td></tr>`).join('')
+    :'<tr><td colspan="8" class="empty-state"><div class="icon">🧾</div>Sin recibos de trabajadores foráneos</td></tr>';
+}
+
+function buscarTrabForaneoParaRecibo(){
+  const q=(document.getElementById('busqReciboF').value||'').toLowerCase().trim();
+  if(!q){renderRecibosForaneos();document.getElementById('resultBusqTrabF').innerHTML='';return;}
+  const L=DB.get('trabajadores_foraneos').filter(t=>(t.num_empleado+'').includes(q)||(t.nombre||'').toLowerCase().includes(q)||(t.apellido_paterno||'').toLowerCase().includes(q)||(t.apellido_materno||'').toLowerCase().includes(q));
+  if(!L.length){document.getElementById('resultBusqTrabF').innerHTML='<div class="alert alert-info">No se encontraron trabajadores foráneos.</div>';return;}
+  document.getElementById('resultBusqTrabF').innerHTML=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:10px;"><div style="font-size:12px;color:var(--text2);margin-bottom:8px;">Selecciona el trabajador foráneo:</div>${L.map(t=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-radius:6px;cursor:pointer;border:1px solid transparent;" onmouseover="this.style.background='rgba(212,160,23,.1)'" onmouseout="this.style.background=''"><div><strong>${t.apellido_paterno} ${t.apellido_materno||''} ${t.nombre}</strong><span style="margin-left:10px;font-size:12px;color:var(--text2)">No.Emp: ${t.num_empleado}</span><span style="margin-left:10px;font-size:12px;color:var(--text2)">${t.pos||''}</span></div><button class="btn btn-sm btn-gold" onclick="abrirModalReciboForaneo(${t.id})">🧾 Crear Recibo</button></div>`).join('')}</div>`;
+  const R=DB.get('recibos_foraneos').filter(r=>L.some(t=>t.id===r.trab_id));
+  renderRecibosForaneos(R);
+}
+
+function abrirModalReciboForaneo(trabId){
+  const t=DB.get('trabajadores_foraneos').find(x=>x.id===trabId);if(!t)return;
+  document.getElementById('reciboFTrabId').value=trabId;
+  document.getElementById('trabFSelNombre').textContent=`${t.apellido_paterno} ${t.apellido_materno||''} ${t.nombre}`;
+  document.getElementById('trabFSelNum').textContent=t.num_empleado;
+  document.getElementById('trabFSelDep').textContent=t.pos||'—';
+  document.getElementById('reciboFNum').value=fmtNum(getNextReciboForaneoNum());
+  const now=new Date();
+  document.getElementById('reciboFFecha').value=now.toLocaleDateString('es-MX',{day:'2-digit',month:'long',year:'numeric'});
+  document.getElementById('reciboFMonto').value='';
+  document.getElementById('reciboFMontoTexto').value='';
+  document.getElementById('reciboFDescripcion').value='';
+  document.getElementById('reciboFFormaPago').value='';
+  document.getElementById('alertReciboF').innerHTML='';
+  document.getElementById('evidenciaGroupF').style.display='none';
+  document.getElementById('evidenciaFPreview').innerHTML='';
+  document.getElementById('evidenciaFArea').classList.remove('has-file');
+  window._evidenciaFData=null;
+  openModal('modalReciboForaneo');
+}
+
+function crearReciboForaneoDesde(trabId){abrirModalReciboForaneo(trabId);}
+
+function checkFormaPagoF(){
+  const fp=document.getElementById('reciboFFormaPago').value;
+  document.getElementById('evidenciaGroupF').style.display=(fp&&fp!=='EFECTIVO')?'block':'none';
+}
+
+function handleEvidenciaFFile(ev){
+  const f=ev.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    window._evidenciaFData={name:f.name,type:f.type,data:e.target.result};
+    document.getElementById('evidenciaFArea').classList.add('has-file');
+    const isPdf=f.type==='application/pdf';
+    document.getElementById('evidenciaFPreview').innerHTML=isPdf
+      ?'<div style="padding:10px;background:rgba(255,255,255,.08);border-radius:6px;text-align:center;"><span style="font-size:28px;">📄</span><br><span style="font-size:12px;color:var(--text2)">'+f.name+'</span></div>'
+      :'<img src="'+e.target.result+'" class="file-preview-img">';
+  };
+  r.readAsDataURL(f);
+}
+
+function guardarReciboForaneo(){
+  const trabId=parseInt(document.getElementById('reciboFTrabId').value);
+  const monto=parseFloat(document.getElementById('reciboFMonto').value);
+  const montoTexto=document.getElementById('reciboFMontoTexto').value.trim();
+  const desc=document.getElementById('reciboFDescripcion').value.trim();
+  const fp=document.getElementById('reciboFFormaPago').value;
+  if(!trabId||!monto||!montoTexto||!desc||!fp){document.getElementById('alertReciboF').innerHTML='<div class="alert alert-danger">⚠️ Todos los campos son requeridos.</div>';return;}
+  const t=DB.get('trabajadores_foraneos').find(x=>x.id===trabId);if(!t)return;
+  const num=getNextReciboForaneoNum();
+  const now=new Date();
+  const r={num_recibo:num,trab_id:trabId,nombre_trabajador:`${t.apellido_paterno} ${t.apellido_materno||''} ${t.nombre}`.trim(),num_empleado:t.num_empleado,pos:t.pos,seccion:t.pos,adscripcion:t.adscripcion,monto:monto,monto_texto:montoTexto,descripcion:desc,forma_pago:fp,fecha:now.toLocaleDateString('es-MX',{day:'2-digit',month:'long',year:'numeric'}),fecha_iso:now.toISOString(),evidencia:window._evidenciaFData||null};
+  let L=DB.get('recibos_foraneos');L.push(r);DB.set('recibos_foraneos',L);
+  closeModal('modalReciboForaneo');
+  renderRecibosForaneos();
+  document.getElementById('resultBusqTrabF').innerHTML='';
+}
+
+function eliminarReciboForaneo(num){
+  if(!confirm('¿Eliminar este recibo foráneo?'))return;
+  DB.set('recibos_foraneos',DB.get('recibos_foraneos').filter(r=>r.num_recibo!==num));
+  renderRecibosForaneos();
+}
+
+function verReciboForaneo(num){
+  const r=DB.get('recibos_foraneos').find(x=>x.num_recibo===num);if(!r)return;
+  currentReciboData=r;
+  const logoSrc=DB.get('logoData','')||'';
+  const ns=`F-${fmtNum(r.num_recibo)}`;
+  const bannerLogo=logoSrc?`<div style="text-align:center;margin-bottom:6px;"><img src="${logoSrc}" style="max-height:60px;max-width:220px;object-fit:contain;"></div>`:'';
+  let h=`<div id="print-area">
+  <div style="background:#fff;color:#000;padding:10px 14px;border-radius:8px;font-family:Arial,sans-serif;font-size:13px;" id="rh1">
+    ${bannerLogo}
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;font-size:12px;">
+      <span style="font-weight:bold;">RECIBO No. ${ns}</span>
+      <span>Tepic, Nayarit; ${r.fecha}</span>
+    </div>
+    <div style="margin:5px 0;line-height:1.6;">
+      <p style="text-align:justify;"><strong>R &nbsp; E &nbsp; C &nbsp; I &nbsp; B &nbsp; I</strong> &nbsp; del C. <strong>${r.nombre_trabajador}</strong>, con número de empleado <strong>${r.num_empleado}</strong>, trabajador <strong>ACTIVO</strong> de la sección <strong>${r.pos||r.seccion||r.adscripcion||"GOBIERNO DEL ESTADO"}</strong>; la cantidad de <strong>$ ${fmt(r.monto)}</strong> (<strong>${r.monto_texto} M.N.</strong>), ${r.descripcion||''}</p>
+      <div style="display:flex;justify-content:space-between;border-top:1px solid #999;padding-top:5px;margin-top:5px;font-weight:bold;">
+        <span>Total Recibido</span><span>$ ${fmt(r.monto)}</span>
+      </div>
+    </div>
+    <div style="margin-top:10px;text-align:center;">
+      <div style="border-top:1.5px solid #333;width:220px;margin:0 auto 3px;"></div>
+      <div style="font-size:11px;margin-bottom:3px;">RECIBIÓ</div>
+      <strong>C.P. MARÍA DEL CONSUELO LLANOS ESQUIVEL</strong><br>
+      <span>TESORERA DEL FONDO DE MUTUALIDAD.</span>
+    </div>
+  </div>
+  <hr style="border:none;border-top:3px dashed #999;margin:6px 0;">
+  <div style="background:#fff;color:#000;padding:10px 14px;border-radius:8px;font-family:Arial,sans-serif;font-size:13px;" id="rh2">
+    ${bannerLogo}
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;font-size:12px;">
+      <span style="font-weight:bold;">RECIBO No. ${ns}</span>
+      <span>Tepic, Nayarit; ${r.fecha}</span>
+    </div>
+    <div style="margin:5px 0;line-height:1.6;">
+      <p style="text-align:justify;"><strong>R &nbsp; E &nbsp; C &nbsp; I &nbsp; B &nbsp; I</strong> &nbsp; del C. <strong>${r.nombre_trabajador}</strong>, con número de empleado <strong>${r.num_empleado}</strong>, trabajador <strong>ACTIVO</strong> de la sección <strong>${r.pos||r.seccion||r.adscripcion||"GOBIERNO DEL ESTADO"}</strong>; la cantidad de <strong>$ ${fmt(r.monto)}</strong> (<strong>${r.monto_texto} M.N.</strong>), ${r.descripcion||''}</p>
+      <div style="display:flex;justify-content:space-between;border-top:1px solid #999;padding-top:5px;margin-top:5px;font-weight:bold;">
+        <span>Total Recibido</span><span>$ ${fmt(r.monto)}</span>
+      </div>
+    </div>
+    <div style="margin-top:10px;text-align:center;">
+      <div style="border-top:1.5px solid #333;width:220px;margin:0 auto 6px;"></div>
+      <div style="font-size:11px;margin-bottom:3px;">RECIBIÓ</div>
+      <strong>C.P. MARÍA DEL CONSUELO LLANOS ESQUIVEL</strong><br>
+      <span>TESORERA DEL FONDO DE MUTUALIDAD.</span>
+    </div>
+  </div>`;
+  if(r.evidencia){
+    const isPdf=r.evidencia.type==='application/pdf';
+    const evidenciaContent=isPdf?`<iframe src="${r.evidencia.data}" style="width:100%;height:100%;border:none;" title="Comprobante PDF"></iframe>`:`<img src="${r.evidencia.data}" style="max-width:100%;max-height:100%;object-fit:contain;border:1px solid #ddd;border-radius:4px;">`;
+    h+=`<div id="rh3" style="page-break-before:always;"><div id="rh3a"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:11px;"><span style="font-weight:bold;">RECIBO No. ${ns} — COPIA COMPROBANTE</span><span>Tepic, Nayarit; ${r.fecha}</span></div><div style="line-height:1.7;font-size:11px;"><p style="text-align:justify;margin:0 0 6px;"><strong>R &nbsp;E &nbsp;C &nbsp;I &nbsp;B &nbsp;I</strong> &nbsp;del C. <strong>${r.nombre_trabajador}</strong>, con número de empleado <strong>${r.num_empleado}</strong>; la cantidad de <strong>$ ${fmt(r.monto)}</strong> (<strong>${r.monto_texto} M.N.</strong>), ${r.descripcion||''}. Forma de pago: <strong>${r.forma_pago}</strong>.</p><div style="display:flex;justify-content:space-between;border-top:1px solid #999;padding-top:6px;font-weight:bold;font-size:11px;"><span>Total Recibido</span><span>$ ${fmt(r.monto)}</span></div></div><div style="margin-top:18px;text-align:center;"><div style="border-top:1.5px solid #333;width:180px;margin:0 auto 4px;"></div><div style="font-size:10px;margin-bottom:4px;">RECIBIÓ</div><strong style="font-size:11px;">C.P. MARÍA DEL CONSUELO LLANOS ESQUIVEL</strong><br><span style="font-size:10px;">TESORERA DEL FONDO DE MUTUALIDAD.</span></div></div><div id="rh3b"><div style="text-align:center;margin-bottom:8px;font-size:11px;font-weight:bold;">COMPROBANTE DE PAGO</div><div style="font-size:10px;color:#555;text-align:center;margin-bottom:8px;">${r.nombre_trabajador} • ${r.fecha}</div><div style="flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;">${evidenciaContent}</div></div></div>`;
+  }
+  h+=`</div>`;
+  document.getElementById('reciboViewer').innerHTML=h;
+  openModal('modalVerRecibo');
+}
+
+// REPORTES FORÁNEOS
+function openModalReportesForaneos(){
+  document.getElementById('tipoReporteF').value='';
+  document.getElementById('filtroReporteEstatusF').value='';
+  document.getElementById('reporteFContenido').innerHTML='';
+  openModal('modalReportesForaneos');
+}
+
+function generarReporteForaneos(){
+  const tipo=document.getElementById('tipoReporteF').value;
+  const estFiltro=document.getElementById('filtroReporteEstatusF').value;
+  if(!tipo){document.getElementById('reporteFContenido').innerHTML='';return;}
+  let L=DB.get('trabajadores_foraneos');
+  if(estFiltro)L=L.filter(t=>t.estatus===estFiltro);
+  const grupos={};
+  L.forEach(t=>{
+    let clave=tipo==='dependencia'?t.dependencia||'Sin Dependencia':tipo==='adscripcion'?t.adscripcion||'Sin Adscripción':tipo==='pos'?t.pos||'Sin P.O.S':t.estatus||'Sin Estatus';
+    if(!grupos[clave])grupos[clave]=[];grupos[clave].push(t);
+  });
+  if(!Object.keys(grupos).length){document.getElementById('reporteFContenido').innerHTML='<div class="empty-state">Sin datos para el reporte.</div>';return;}
+  document.getElementById('reporteFContenido').innerHTML=Object.entries(grupos).sort((a,b)=>a[0].localeCompare(b[0])).map(([k,arr])=>`<div style="margin-bottom:20px;"><div style="font-weight:700;color:var(--gold2);font-size:14px;padding:8px 12px;background:rgba(212,160,23,.1);border-radius:6px;margin-bottom:8px;">${k} <span style="font-weight:400;font-size:12px;color:var(--text2)">(${arr.length} trabajadores foráneos)</span></div><div class="table-wrap"><table><thead><tr><th>No.Emp</th><th>Nombre</th><th>Sección</th><th>Estatus</th></tr></thead><tbody>${arr.map(t=>`<tr><td>${t.num_empleado}</td><td>${t.apellido_paterno} ${t.apellido_materno||''} ${t.nombre}</td><td>${t.pos||'-'}</td><td>${badgeEst(t.estatus)}</td></tr>`).join('')}</tbody></table></div></div>`).join('');
+}
+
+function imprimirReporteF(){
+  const c=document.getElementById('reporteFContenido').innerHTML;if(!c)return;
+  const w=window.open('','_blank');
+  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Reporte Trabajadores Foráneos SUTSEM</title><style>body{font-family:Arial,sans-serif;font-size:12px;color:#000;padding:20px}table{width:100%;border-collapse:collapse;margin-bottom:12px}th,td{border:1px solid #ccc;padding:6px 8px;text-align:left}th{background:#f0f0f0;font-weight:600}.badge{padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}</style></head><body><h2 style="text-align:center;margin-bottom:20px;">Reporte Trabajadores Foráneos — FONDO MUTUAL SUTSEM</h2>'+c+'</body></html>');
+  w.document.close();setTimeout(()=>w.print(),400);
+}
+
 // ═══ RESPALDO ═══
 function exportarRespaldo(){
   const data={
-    version:'1.0',
+    version:'1.1',
     fecha: new Date().toISOString(),
     trabajadores: DB.get('trabajadores',[]),
     recibos: DB.get('recibos',[]),
     recibos_secciones: DB.get('recibos_secciones',[]),
-    secciones: DB.get('secciones',[])
+    secciones: DB.get('secciones',[]),
+    trabajadores_foraneos: DB.get('trabajadores_foraneos',[]),
+    recibos_foraneos: DB.get('recibos_foraneos',[])
   };
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   const a=document.createElement('a');
@@ -1561,8 +2088,10 @@ function importarRespaldo(){
       if(data.recibos) DB.set('recibos',data.recibos);
       if(data.recibos_secciones) DB.set('recibos_secciones',data.recibos_secciones);
       if(data.secciones) DB.set('secciones',data.secciones);
+      if(data.trabajadores_foraneos) DB.set('trabajadores_foraneos',data.trabajadores_foraneos);
+      if(data.recibos_foraneos) DB.set('recibos_foraneos',data.recibos_foraneos);
       renderDashboard();
-      document.getElementById('respaldoMsg').innerHTML='<div class="alert alert-success">✅ Respaldo importado. Trabajadores: '+data.trabajadores.length+' | Recibos: '+data.recibos.length+'</div>';
+      document.getElementById('respaldoMsg').innerHTML='<div class="alert alert-success">✅ Respaldo importado. Trabajadores: '+data.trabajadores.length+' | Recibos: '+data.recibos.length+' | Foráneos: '+(data.trabajadores_foraneos||[]).length+'</div>';
     }catch(err){
       document.getElementById('respaldoMsg').innerHTML='<div class="alert alert-danger">❌ Error: archivo JSON inválido o corrupto.</div>';
     }
@@ -1572,6 +2101,7 @@ function importarRespaldo(){
 
 // INIT
 if(!DB.get('secciones').length){DB.set('secciones',[{id:1,nombre:"Acaponeta"},{id:2,nombre:"Ahuacatlán"},{id:3,nombre:"Amatlán de Cañas"},{id:4,nombre:"Bahía de Banderas"},{id:5,nombre:"Compostela"},{id:6,nombre:"Del Nayar"},{id:7,nombre:"Huajicori"},{id:8,nombre:"Ixtlán del Río"},{id:9,nombre:"Jala"},{id:10,nombre:"La Yesca"},{id:11,nombre:"Loreto"},{id:12,nombre:"Rosamorada"},{id:13,nombre:"Ruíz"},{id:14,nombre:"San Blas"},{id:15,nombre:"San Pedro Lagunillas"},{id:16,nombre:"Santa María del Oro"},{id:17,nombre:"Santiago Ixcuintla"},{id:18,nombre:"Tecuala"},{id:19,nombre:"Tuxpan"},{id:20,nombre:"Xalisco"}]);}
+populateSeccionesForaneas();
 renderDashboard();
   // ═══ TEMAS ═══
   window.setTheme = function(t) {
