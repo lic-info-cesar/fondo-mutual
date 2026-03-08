@@ -205,6 +205,7 @@
   .empty-state .icon{font-size:3rem;margin-bottom:12px}
   @media(max-width:600px){.header{flex-wrap:wrap}.form-grid{grid-template-columns:1fr}}
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 </head>
 <body>
 
@@ -262,7 +263,8 @@
   <button class="nav-btn" onclick="showSection('secciones')" data-sec="secciones">🏢 Secciones Foráneas</button>
   <button class="nav-btn" onclick="showSection('trab-foraneos')" data-sec="trab-foraneos">🚌 Trabajadores Foráneos</button>
   <button class="nav-btn" onclick="showSection('recibos-foraneos');renderRecibosForaneos()" data-sec="recibos-foraneos">🧾 Recibos Foráneos</button>
-  <button class="nav-btn" onclick="showSection('respaldo')" data-sec="respaldo">💾 Respaldo</button>
+  <button class="nav-btn" onclick="showSection('graficas');renderGraficas()" data-sec="graficas">📈 Gráficas</button>
+
 </div>
 
 <div class="main">
@@ -302,6 +304,7 @@
       </select>
       <button class="btn btn-gold" onclick="openModalTrabajador()">➕ Nuevo Trabajador</button>
       <button class="btn btn-secondary" onclick="openModalReportes()" style="background:#1a3a5c;border:1px solid #2196f3;color:#64b5f6;">📊 Crear Reporte</button>
+      <button class="btn btn-secondary" onclick="openModalRespaldoTrab()" style="background:#1a2e1a;border:1px solid #3fb950;color:#3fb950;">💾 Respaldar</button>
     </div>
     <div class="table-wrap">
       <table>
@@ -452,6 +455,96 @@
 </div>
 
 
+<!-- GRÁFICAS -->
+<div class="section" id="sec-graficas">
+
+  <!-- Barra de acciones globales -->
+  <div style="padding:16px 20px 0;display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;">
+    <button class="btn" style="background:#1a2e3a;border:1px solid #38bdf8;color:#38bdf8;font-size:12px;padding:8px 16px;" onclick="imprimirTodasGraficas()">
+      🖨️ Imprimir Todas
+    </button>
+    <button class="btn" style="background:#1a3a1a;border:1px solid #3fb950;color:#3fb950;font-size:12px;padding:8px 16px;" onclick="descargarTodasGraficas()">
+      📦 Descargar Todas (ZIP)
+    </button>
+  </div>
+
+  <div style="padding:20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:20px;" id="graficas-grid">
+
+    <!-- Trabajadores por Poder -->
+    <div class="card" style="padding:20px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <div class="card-title" style="margin:0;">🏛️ Trabajadores por Poder</div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-sm" style="background:transparent;border:1px solid var(--border);color:var(--text2);padding:4px 8px;font-size:11px;" onclick="imprimirGrafica('chart-poder','Trabajadores por Poder')" title="Imprimir">🖨️</button>
+          <button class="btn btn-sm" style="background:transparent;border:1px solid var(--border);color:var(--text2);padding:4px 8px;font-size:11px;" onclick="descargarGrafica('chart-poder','trabajadores_por_poder')" title="Descargar PNG">💾</button>
+        </div>
+      </div>
+      <canvas id="chart-poder" height="220"></canvas>
+    </div>
+
+    <!-- Estatus trabajadores locales vs foráneos -->
+    <div class="card" style="padding:20px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <div class="card-title" style="margin:0;">👥 Estatus — Locales vs Foráneos</div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-sm" style="background:transparent;border:1px solid var(--border);color:var(--text2);padding:4px 8px;font-size:11px;" onclick="imprimirGrafica('chart-estatus','Estatus Locales vs Foráneos')" title="Imprimir">🖨️</button>
+          <button class="btn btn-sm" style="background:transparent;border:1px solid var(--border);color:var(--text2);padding:4px 8px;font-size:11px;" onclick="descargarGrafica('chart-estatus','estatus_locales_vs_foraneos')" title="Descargar PNG">💾</button>
+        </div>
+      </div>
+      <canvas id="chart-estatus" height="220"></canvas>
+    </div>
+
+    <!-- Recibos por mes -->
+    <div class="card" style="padding:20px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <div class="card-title" style="margin:0;">📅 Recibos Emitidos por Mes</div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-sm" style="background:transparent;border:1px solid var(--border);color:var(--text2);padding:4px 8px;font-size:11px;" onclick="imprimirGrafica('chart-recibos-mes','Recibos por Mes')" title="Imprimir">🖨️</button>
+          <button class="btn btn-sm" style="background:transparent;border:1px solid var(--border);color:var(--text2);padding:4px 8px;font-size:11px;" onclick="descargarGrafica('chart-recibos-mes','recibos_por_mes')" title="Descargar PNG">💾</button>
+        </div>
+      </div>
+      <canvas id="chart-recibos-mes" height="220"></canvas>
+    </div>
+
+    <!-- Monto recaudado por mes -->
+    <div class="card" style="padding:20px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <div class="card-title" style="margin:0;">💰 Monto Recaudado por Mes</div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-sm" style="background:transparent;border:1px solid var(--border);color:var(--text2);padding:4px 8px;font-size:11px;" onclick="imprimirGrafica('chart-monto-mes','Monto Recaudado por Mes')" title="Imprimir">🖨️</button>
+          <button class="btn btn-sm" style="background:transparent;border:1px solid var(--border);color:var(--text2);padding:4px 8px;font-size:11px;" onclick="descargarGrafica('chart-monto-mes','monto_por_mes')" title="Descargar PNG">💾</button>
+        </div>
+      </div>
+      <canvas id="chart-monto-mes" height="220"></canvas>
+    </div>
+
+    <!-- Forma de pago -->
+    <div class="card" style="padding:20px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <div class="card-title" style="margin:0;">💳 Forma de Pago</div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-sm" style="background:transparent;border:1px solid var(--border);color:var(--text2);padding:4px 8px;font-size:11px;" onclick="imprimirGrafica('chart-pago','Forma de Pago')" title="Imprimir">🖨️</button>
+          <button class="btn btn-sm" style="background:transparent;border:1px solid var(--border);color:var(--text2);padding:4px 8px;font-size:11px;" onclick="descargarGrafica('chart-pago','forma_de_pago')" title="Descargar PNG">💾</button>
+        </div>
+      </div>
+      <canvas id="chart-pago" height="220"></canvas>
+    </div>
+
+    <!-- Trabajadores foráneos por sección -->
+    <div class="card" style="padding:20px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <div class="card-title" style="margin:0;">🚌 Foráneos por Sección</div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-sm" style="background:transparent;border:1px solid var(--border);color:var(--text2);padding:4px 8px;font-size:11px;" onclick="imprimirGrafica('chart-secciones','Foráneos por Sección')" title="Imprimir">🖨️</button>
+          <button class="btn btn-sm" style="background:transparent;border:1px solid var(--border);color:var(--text2);padding:4px 8px;font-size:11px;" onclick="descargarGrafica('chart-secciones','foraneos_por_seccion')" title="Descargar PNG">💾</button>
+        </div>
+      </div>
+      <canvas id="chart-secciones" height="220"></canvas>
+    </div>
+
+  </div>
+</div>
+
 <!-- TRABAJADORES FORÁNEOS -->
 <div class="section" id="sec-trab-foraneos">
   <div class="inner-tabs">
@@ -475,6 +568,8 @@
         </select>
         <button class="btn btn-gold" onclick="openModalTrabForaneo()">➕ Nuevo Trabajador</button>
         <button class="btn btn-secondary" onclick="openModalReportesForaneos()" style="background:#1a3a5c;border:1px solid #2196f3;color:#64b5f6;">📊 Crear Reporte</button>
+        <button class="btn btn-secondary" onclick="openModalRespaldoForaneos()" style="background:#1a2e1a;border:1px solid #3fb950;color:#3fb950;">💾 Respaldar</button>
+        <button class="btn btn-secondary" onclick="openModalImportarForaneos()" style="background:#2e1a2e;border:1px solid #c084fc;color:#c084fc;">📥 Importar</button>
       </div>
       <div class="table-wrap">
         <table>
@@ -1017,7 +1112,8 @@ function verArchivoPDF(encoded){
     const obj=JSON.parse(decodeURIComponent(encoded));
     const w=window.open('','_blank','width=900,height=700');
     w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${obj.name||'Documento'}</title>
-    <style>body{margin:0;background:#333;}iframe{width:100vw;height:100vh;border:none;}</style></head>
+    <style>body{margin:0;background:#333;}iframe{width:100vw;height:100vh;border:none;}</style>
+</head>
     <body><iframe src="${obj.data}"></iframe></body></html>`);
     w.document.close();
   }catch(e){alert('No se pudo abrir el archivo.');}
@@ -1177,7 +1273,8 @@ function imprimirReporte(){
   table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ccc;padding:6px 8px;text-align:left;}
   th{background:#f0f0f0;font-weight:700;}tr:nth-child(even){background:#f9f9f9;}
   span[style*="border-radius"]{border-radius:10px;padding:2px 8px;font-size:11px;}
-  @media print{@page{margin:1cm}}</style></head><body>
+  @media print{@page{margin:1cm}}</style>
+</head><body>
   <div style="margin-bottom:10px">${contenido}</div>
   <script>window.onload=()=>{window.print();}<\/script></body></html>`);
   w.document.close();
@@ -1612,7 +1709,8 @@ function imprimirTodosResultadosSec(){
   });
 
   const w=window.open('','_blank');
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Recibos Secciones</title><style>${css}</style></head><body>${body}</body></html>`);
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Recibos Secciones</title><style>${css}</style>
+</head><body>${body}</body></html>`);
   w.document.close();
   setTimeout(()=>w.print(),700);
 }
@@ -1791,17 +1889,26 @@ function filtrarTrabForaneos(){
 }
 
 function populateSeccionesForaneas(){
-  // Obtiene secciones del catálogo registrado en "Secciones Foráneas"
-  const secciones=DB.get('secciones',[]).map(s=>s.nombre).filter(Boolean).sort();
+  // Municipios de Nayarit (excepto Tepic) — lista fija oficial
+  const MUNICIPIOS_NAYARIT = [
+    'ACAPONETA','AHUACATLÁN','AMATLÁN DE CAÑAS','BAHÍA DE BANDERAS',
+    'COMPOSTELA','DEL NAYAR','HUAJICORI','IXTLÁN DEL RÍO',
+    'JALA','LA YESCA','LORETO','ROSAMORADA',
+    'RUÍZ','SAN BLAS','SAN PEDRO LAGUNILLAS','SANTA MARÍA DEL ORO',
+    'SANTIAGO IXCUINTLA','TECUALA','TUXPAN','XALISCO'
+  ];
+  // Secciones adicionales del catálogo (sin duplicar)
+  const seccionesDB=DB.get('secciones',[]).map(s=>s.nombre).filter(Boolean);
+  const todas=[...new Set([...MUNICIPIOS_NAYARIT,...seccionesDB])].sort();
   // Select del modal
   const selModal=document.getElementById('trabFPos');
   const valModal=selModal.value;
-  selModal.innerHTML='<option value="">Seleccionar sección...</option>'+secciones.map(s=>`<option value="${s}">${s}</option>`).join('');
+  selModal.innerHTML='<option value="">Seleccionar sección...</option>'+todas.map(s=>`<option value="${s}">${s}</option>`).join('');
   if(valModal)selModal.value=valModal;
   // Select del filtro
   const selFiltro=document.getElementById('filtroPosF');
   const valFiltro=selFiltro.value;
-  selFiltro.innerHTML='<option value="">Todas las Secciones</option>'+secciones.map(s=>`<option value="${s}">${s}</option>`).join('');
+  selFiltro.innerHTML='<option value="">Todas las Secciones</option>'+todas.map(s=>`<option value="${s}">${s}</option>`).join('');
   if(valFiltro)selFiltro.value=valFiltro;
 }
 
@@ -1888,7 +1995,6 @@ function renderRecibosForaneos(list){
     <td>${r.evidencia?'<span style="color:var(--success)">✅</span>':'<span style="color:var(--text2)">—</span>'}</td>
     <td>
       <button class="btn btn-sm btn-primary" onclick="verReciboForaneo(${r.num_recibo})">👁️</button>
-      <button class="btn btn-sm btn-danger" onclick="eliminarReciboForaneo(${r.num_recibo})">🗑️</button>
     </td></tr>`).join('')
     :'<tr><td colspan="8" class="empty-state"><div class="icon">🧾</div>Sin recibos de trabajadores foráneos</td></tr>';
 }
@@ -2111,6 +2217,574 @@ renderDashboard();
     });
     localStorage.setItem('fm_theme', t);
   };
+
+
+/* ══ IMPRIMIR / DESCARGAR GRÁFICAS ══ */
+function descargarGrafica(canvasId, nombre){
+  const canvas=document.getElementById(canvasId);
+  if(!canvas){alert('Gráfica no disponible.');return;}
+  const fecha=new Date().toISOString().slice(0,10);
+  const a=document.createElement('a');
+  a.href=canvas.toDataURL('image/png');
+  a.download='SUTSEM_'+nombre+'_'+fecha+'.png';
+  a.click();
+}
+
+function imprimirGrafica(canvasId, titulo){
+  const canvas=document.getElementById(canvasId);
+  if(!canvas){alert('Gráfica no disponible.');return;}
+  // Renderizar en canvas temporal con fondo blanco para impresión
+  const tmp=document.createElement('canvas');
+  tmp.width=canvas.width;tmp.height=canvas.height;
+  const ctx=tmp.getContext('2d');
+  ctx.fillStyle='#ffffff';ctx.fillRect(0,0,tmp.width,tmp.height);
+  ctx.drawImage(canvas,0,0);
+  const img=tmp.toDataURL('image/png');
+  const fecha=new Date().toLocaleDateString('es-MX',{day:'2-digit',month:'long',year:'numeric'});
+  const css='@page{size:letter landscape;margin:1.5cm}'+
+    'body{margin:0;padding:0;font-family:Arial,sans-serif;background:#fff;color:#000;}'+
+    '.header{text-align:center;border-bottom:2px solid #0a3d1a;padding-bottom:8px;margin-bottom:16px;}'+
+    '.header h2{font-size:15px;margin:0 0 3px;color:#0a3d1a;}'+
+    '.header p{font-size:11px;color:#666;margin:0;}'+
+    '.grafica-wrap{display:flex;justify-content:center;align-items:center;}'+
+    'img{max-width:90%;max-height:75vh;object-fit:contain;border:1px solid #ddd;box-shadow:0 2px 8px rgba(0,0,0,.1);}'+
+    '.footer{position:fixed;bottom:1cm;left:0;right:0;text-align:center;font-size:9px;color:#aaa;border-top:1px solid #ddd;padding-top:4px;}'+
+    '@media print{.footer{position:fixed}}';
+  const w=window.open('','_blank','width=1000,height=750');
+  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>'+titulo+'</title><style>'+css+'</style></head><body>'+
+    '<div class="header"><h2>FONDO MUTUAL — SUTSEM Nayarit</h2><p>'+titulo+'&nbsp;&nbsp;|&nbsp;&nbsp;'+fecha+'</p></div>'+
+    '<div class="grafica-wrap"><img src="'+img+'"></div>'+
+    '<div class="footer">Sistema FONDO MUTUAL — SUTSEM Nayarit &nbsp;|&nbsp; '+fecha+'</div>'+
+    '<scr'+'ipt>window.onload=function(){window.print();};</scr'+'ipt></body></html>');
+  w.document.close();
+}
+
+function descargarTodasGraficas(){
+  // Combina las 6 graficas en un solo PNG — 2 columnas x 3 filas
+  const graficas=[
+    {id:'chart-poder',titulo:'Trabajadores por Poder'},
+    {id:'chart-estatus',titulo:'Estatus Locales vs Foráneos'},
+    {id:'chart-recibos-mes',titulo:'Recibos por Mes'},
+    {id:'chart-monto-mes',titulo:'Monto por Mes'},
+    {id:'chart-pago',titulo:'Forma de Pago'},
+    {id:'chart-secciones',titulo:'Foráneos por Sección'}
+  ];
+  const cols=2, filas=3;
+  const cW=700, cH=320; // tamaño de cada celda
+  const padX=20, padY=40, titleH=28, headerH=60, footerH=30;
+  const totalW=cols*cW + (cols+1)*padX;
+  const totalH=headerH + filas*(cH+titleH+padY) + footerH + 20;
+  const out=document.createElement('canvas');
+  out.width=totalW; out.height=totalH;
+  const ctx=out.getContext('2d');
+
+  // Fondo blanco
+  ctx.fillStyle='#ffffff';
+  ctx.fillRect(0,0,totalW,totalH);
+
+  // Encabezado
+  ctx.fillStyle='#0a3d1a';
+  ctx.fillRect(0,0,totalW,headerH);
+  ctx.fillStyle='#ffffff';
+  ctx.font='bold 20px Arial';
+  ctx.textAlign='center';
+  ctx.fillText('FONDO MUTUAL — SUTSEM Nayarit',totalW/2,30);
+  ctx.font='12px Arial';
+  ctx.fillStyle='rgba(255,255,255,0.8)';
+  const fecha=new Date().toLocaleDateString('es-MX',{day:'2-digit',month:'long',year:'numeric'});
+  ctx.fillText('Reporte de Gráficas Estadísticas  |  '+fecha,totalW/2,50);
+
+  // Línea separadora
+  ctx.strokeStyle='#d4a017';
+  ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(padX,headerH-2);ctx.lineTo(totalW-padX,headerH-2);ctx.stroke();
+
+  // Dibujar cada gráfica
+  graficas.forEach((g,i)=>{
+    const canvas=document.getElementById(g.id);
+    if(!canvas)return;
+    const col=i%cols;
+    const fila=Math.floor(i/cols);
+    const x=padX + col*(cW+padX);
+    const y=headerH + padY/2 + fila*(cH+titleH+padY);
+
+    // Fondo tarjeta
+    ctx.fillStyle='#f8f9fa';
+    ctx.strokeStyle='#dee2e6';
+    ctx.lineWidth=1;
+    roundRect(ctx, x, y, cW, cH+titleH+8, 8);
+    ctx.fill(); ctx.stroke();
+
+    // Título de la gráfica
+    ctx.fillStyle='#0a3d1a';
+    ctx.font='bold 13px Arial';
+    ctx.textAlign='left';
+    ctx.fillText(g.titulo, x+12, y+20);
+
+    // Línea bajo título
+    ctx.strokeStyle='#dee2e6';
+    ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(x+8,y+titleH-2);ctx.lineTo(x+cW-8,y+titleH-2);ctx.stroke();
+
+    // Imagen con fondo blanco — respetar aspect ratio original
+    const tmp=document.createElement('canvas');
+    tmp.width=canvas.width; tmp.height=canvas.height;
+    const tctx=tmp.getContext('2d');
+    tctx.fillStyle='#ffffff'; tctx.fillRect(0,0,tmp.width,tmp.height);
+    tctx.drawImage(canvas,0,0);
+    const maxW=cW-16, maxH=cH-8;
+    const ratio=Math.min(maxW/tmp.width, maxH/tmp.height);
+    const dw=tmp.width*ratio, dh=tmp.height*ratio;
+    const dx=x+8+(maxW-dw)/2, dy=y+titleH+(maxH-dh)/2;
+    ctx.drawImage(tmp, dx, dy, dw, dh);
+  });
+
+  // Pie de página
+  ctx.fillStyle='#666';
+  ctx.font='10px Arial';
+  ctx.textAlign='center';
+  ctx.fillText('Sistema FONDO MUTUAL — SUTSEM Nayarit  |  Generado el '+fecha, totalW/2, totalH-10);
+
+  // Descargar
+  const fechaFile=new Date().toISOString().slice(0,10);
+  const a=document.createElement('a');
+  a.href=out.toDataURL('image/png');
+  a.download='SUTSEM_Graficas_'+fechaFile+'.png';
+  a.click();
+}
+
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);
+  ctx.closePath();
+}
+
+function imprimirTodasGraficas(){
+  const graficas=[
+    {id:'chart-poder',titulo:'Trabajadores por Poder'},
+    {id:'chart-estatus',titulo:'Estatus Locales vs Foráneos'},
+    {id:'chart-recibos-mes',titulo:'Recibos Emitidos por Mes'},
+    {id:'chart-monto-mes',titulo:'Monto Recaudado por Mes'},
+    {id:'chart-pago',titulo:'Forma de Pago'},
+    {id:'chart-secciones',titulo:'Foráneos por Sección'}
+  ];
+  const fecha=new Date().toLocaleDateString('es-MX',{day:'2-digit',month:'long',year:'numeric'});
+  let bloques='';
+  graficas.forEach(g=>{
+    const canvas=document.getElementById(g.id);
+    if(!canvas)return;
+    // Fondo blanco para cada canvas
+    const tmp=document.createElement('canvas');
+    tmp.width=canvas.width;tmp.height=canvas.height;
+    const ctx=tmp.getContext('2d');
+    ctx.fillStyle='#ffffff';ctx.fillRect(0,0,tmp.width,tmp.height);
+    ctx.drawImage(canvas,0,0);
+    bloques+='<div class="bloque"><div class="bloque-titulo">'+g.titulo+'</div><div class="bloque-img"><img src="'+tmp.toDataURL('image/png')+'"></div></div>';
+  });
+  const css='@page{size:letter;margin:1.2cm}'+
+    '*{box-sizing:border-box;}'+
+    'body{margin:0;padding:0;font-family:Arial,sans-serif;background:#fff;color:#000;}'+
+    '.cabecera{text-align:center;border-bottom:3px solid #0a3d1a;padding-bottom:10px;margin-bottom:16px;}'+
+    '.cabecera h1{font-size:16px;color:#0a3d1a;margin:0 0 4px;}'+
+    '.cabecera p{font-size:11px;color:#555;margin:0;}'+
+    '.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}'+
+    '.bloque{border:1px solid #ddd;border-radius:6px;padding:12px;page-break-inside:avoid;break-inside:avoid;}'+
+    '.bloque-titulo{font-size:12px;font-weight:700;color:#0a3d1a;margin-bottom:8px;border-bottom:1px solid #eee;padding-bottom:4px;}'+
+    '.bloque-img{text-align:center;}'+
+    'img{max-width:100%;max-height:220px;object-fit:contain;}'+
+    '.pie{text-align:center;font-size:9px;color:#aaa;margin-top:16px;border-top:1px solid #eee;padding-top:6px;}'+
+    '@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}.bloque{page-break-inside:avoid;break-inside:avoid}}';
+  const w=window.open('','_blank','width=1050,height=800');
+  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Gráficas FONDO MUTUAL</title><style>'+css+'</style></head><body>'+
+    '<div class="cabecera"><h1>FONDO MUTUAL — SUTSEM Nayarit</h1><p>Reporte de Gráficas Estadísticas &nbsp;|&nbsp; '+fecha+'</p></div>'+
+    '<div class="grid">'+bloques+'</div>'+
+    '<div class="pie">Sistema FONDO MUTUAL — SUTSEM Nayarit &nbsp;|&nbsp; Generado el '+fecha+'</div>'+
+    '<scr'+'ipt>window.onload=function(){window.print();};</scr'+'ipt></body></html>');
+  w.document.close();
+}
+
+/* ══ GRÁFICAS ══ */
+const _charts={};
+function destroyChart(id){if(_charts[id]){_charts[id].destroy();delete _charts[id];}}
+
+function renderGraficas(){
+  const T=DB.get('trabajadores',[]);
+  const TF=DB.get('trabajadores_foraneos',[]);
+  const R=DB.get('recibos',[]);
+  const RS=DB.get('recibos_secciones',[]);
+  const RF=DB.get('recibos_foraneos',[]);
+  const todosRecibos=[...R,...RS,...RF];
+
+  const accent='#58a6ff',gold='#d4a017',success='#3fb950',danger='#f85149',warning='#d29922',purple='#c084fc';
+  const gridColor='rgba(255,255,255,0.07)';
+  const textColor='#333333';
+  const baseOpts={responsive:true,plugins:{legend:{labels:{color:'#222222',font:{size:12,weight:'600'}}}}};
+
+  /* 1. Trabajadores por Poder - Dona */
+  destroyChart('poder');
+  const poderes=['PODER EJECUTIVO','PODER LEGISLATIVO','PODER JUDICIAL','OPD'];
+  const pLabels=['Ejecutivo','Legislativo','Judicial','OPD'];
+  const pData=poderes.map(p=>T.filter(t=>t.pos===p).length);
+  _charts['poder']=new Chart(document.getElementById('chart-poder'),{
+    type:'doughnut',
+    data:{labels:pLabels,datasets:[{data:pData,backgroundColor:[accent,gold,success,purple],borderWidth:2,borderColor:'#161b22'}]},
+    options:{...baseOpts,cutout:'60%'}
+  });
+
+  /* 2. Estatus Locales vs Foraneos - Barras agrupadas */
+  destroyChart('estatus');
+  const estatuses=['ACTIVO','BAJA','SUSPENDIDO'];
+  _charts['estatus']=new Chart(document.getElementById('chart-estatus'),{
+    type:'bar',
+    data:{
+      labels:estatuses,
+      datasets:[
+        {label:'Locales',data:estatuses.map(e=>T.filter(t=>(t.estatus||'ACTIVO')===e).length),backgroundColor:accent,borderRadius:4},
+        {label:'Foráneos',data:estatuses.map(e=>TF.filter(t=>(t.estatus||'ACTIVO')===e).length),backgroundColor:gold,borderRadius:4}
+      ]
+    },
+    options:{...baseOpts,scales:{x:{ticks:{color:textColor},grid:{color:gridColor}},y:{ticks:{color:textColor},grid:{color:gridColor},beginAtZero:true}}}
+  });
+
+  /* 3. Recibos por mes (ultimos 6) - Linea — usa fecha_iso */
+  destroyChart('recibos-mes');
+  const meses=[],mLabels=[];
+  for(let i=5;i>=0;i--){
+    const d=new Date();d.setMonth(d.getMonth()-i);
+    meses.push(d.toISOString().slice(0,7));
+    mLabels.push(d.toLocaleDateString('es-MX',{month:'short',year:'2-digit'}));
+  }
+  const recMes=meses.map(m=>todosRecibos.filter(r=>(r.fecha_iso||'').slice(0,7)===m).length);
+  _charts['recibos-mes']=new Chart(document.getElementById('chart-recibos-mes'),{
+    type:'line',
+    data:{labels:mLabels,datasets:[{label:'Recibos',data:recMes,borderColor:accent,backgroundColor:'rgba(88,166,255,0.12)',fill:true,tension:.4,pointBackgroundColor:accent,pointRadius:5}]},
+    options:{...baseOpts,scales:{x:{ticks:{color:textColor},grid:{color:gridColor}},y:{ticks:{color:textColor},grid:{color:gridColor},beginAtZero:true}}}
+  });
+
+  /* 4. Monto por mes (ultimos 6) - Barras — usa fecha_iso */
+  destroyChart('monto-mes');
+  const montoMes=meses.map(m=>todosRecibos.filter(r=>(r.fecha_iso||'').slice(0,7)===m).reduce((s,r)=>s+parseFloat(r.monto||0),0));
+  _charts['monto-mes']=new Chart(document.getElementById('chart-monto-mes'),{
+    type:'bar',
+    data:{labels:mLabels,datasets:[{label:'Monto ($)',data:montoMes,backgroundColor:gold,borderRadius:4}]},
+    options:{...baseOpts,scales:{
+      x:{ticks:{color:textColor},grid:{color:gridColor}},
+      y:{ticks:{color:textColor,callback:v=>'$'+v.toLocaleString('es-MX')},grid:{color:gridColor},beginAtZero:true}
+    },plugins:{...baseOpts.plugins,tooltip:{callbacks:{label:c=>'$'+parseFloat(c.raw).toLocaleString('es-MX',{minimumFractionDigits:2})}}}}
+  });
+
+  /* 5. Forma de pago - Pastel */
+  destroyChart('pago');
+  const formasMap={};
+  todosRecibos.forEach(r=>{const f=r.forma_pago||'No especificado';formasMap[f]=(formasMap[f]||0)+1;});
+  const formas=Object.keys(formasMap);
+  const pagoColors=[success,accent,gold,purple,warning,danger];
+  _charts['pago']=new Chart(document.getElementById('chart-pago'),{
+    type:'pie',
+    data:{labels:formas,datasets:[{data:formas.map(f=>formasMap[f]),backgroundColor:pagoColors.slice(0,formas.length),borderWidth:2,borderColor:'#161b22'}]},
+    options:{...baseOpts}
+  });
+
+  /* 6. Foraneos por seccion - Barras horizontales */
+  destroyChart('secciones');
+  const seccMap={};
+  TF.forEach(t=>{const s=t.pos||'Sin sección';seccMap[s]=(seccMap[s]||0)+1;});
+  const seccLabels=Object.keys(seccMap).sort((a,b)=>seccMap[b]-seccMap[a]).slice(0,10);
+  const seccData=seccLabels.map(s=>seccMap[s]);
+  if(seccLabels.length){
+    _charts['secciones']=new Chart(document.getElementById('chart-secciones'),{
+      type:'bar',
+      data:{labels:seccLabels,datasets:[{label:'Trabajadores',data:seccData,backgroundColor:purple,borderRadius:4}]},
+      options:{...baseOpts,indexAxis:'y',scales:{x:{ticks:{color:textColor},grid:{color:gridColor},beginAtZero:true},y:{ticks:{color:textColor,font:{size:11}},grid:{color:gridColor}}}}
+    });
+  }
+}
+
   const savedTheme = localStorage.getItem('fm_theme');
   if (savedTheme) setTheme(savedTheme);
-</script></body></html>
+
+/* ══ RESPALDO FORÁNEOS ══ */
+function openModalRespaldoForaneos(){
+  const t=DB.get('trabajadores_foraneos',[]);
+  document.getElementById('respaldoForaneoCount').textContent=t.length+' trabajadores foráneos en base de datos';
+  openModal('modalRespaldoForaneos');
+}
+function respaldoForaneosJSON(){
+  const t=DB.get('trabajadores_foraneos',[]);
+  const fecha=new Date().toISOString().slice(0,10);
+  const blob=new Blob([JSON.stringify({fecha_respaldo:new Date().toISOString(),total:t.length,trabajadores_foraneos:t},null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='SUTSEM_TrabForaneos_'+fecha+'.json';a.click();
+}
+function respaldoForaneosExcel(){
+  const t=DB.get('trabajadores_foraneos',[]);
+  const fecha=new Date().toISOString().slice(0,10);
+  const cols=['id','num_empleado','nombre','apellido_paterno','apellido_materno','pos','adscripcion','fecha_ingreso','estatus','observaciones','fecha_registro'];
+  const header=cols.join('\t');
+  const rows=t.map(w=>cols.map(c=>w[c]||'').join('\t'));
+  const tsv=header+'\n'+rows.join('\n');
+  const blob=new Blob(['\uFEFF'+tsv],{type:'text/tab-separated-values;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='SUTSEM_TrabForaneos_'+fecha+'.xls';a.click();
+}
+/* ══ IMPORTAR FORÁNEOS ══ */
+function openModalImportarForaneos(){
+  document.getElementById('importForaneoMsg').innerHTML='';
+  document.getElementById('importForaneoFile').value='';
+  document.getElementById('importForaneoPreview').innerHTML='';
+  document.getElementById('importForaneoBarra').style.display='none';
+  document.getElementById('importForaneoBarraFill').style.width='0%';
+  document.getElementById('importForaneoBarraPct').textContent='0%';
+  const btn=document.getElementById('btnConfirmarImportF');
+  if(btn)btn.disabled=false;
+  window._importForaneosData=null;
+  openModal('modalImportarForaneos');
+}
+function leerArchivoImportForaneo(){
+  const file=document.getElementById('importForaneoFile').files[0];
+  if(!file)return;
+  const ext=file.name.split('.').pop().toLowerCase();
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      let datos=[];
+      if(ext==='json'){
+        const parsed=JSON.parse(e.target.result);
+        datos=parsed.trabajadores_foraneos||parsed;
+        if(!Array.isArray(datos))throw new Error('JSON inválido');
+      } else {
+        const lines=e.target.result.split('\n').filter(l=>l.trim());
+        const sep=lines[0].includes('\t')?'\t':',';
+        const headers=lines[0].split(sep).map(h=>h.trim().replace(/^\uFEFF/,''));
+        datos=lines.slice(1).map(l=>{
+          const vals=l.split(sep);
+          const obj={};
+          headers.forEach((h,i)=>obj[h]=(vals[i]||'').trim());
+          return obj;
+        });
+      }
+      window._importForaneosData=datos;
+      document.getElementById('importForaneoPreview').innerHTML=
+        '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-top:12px;">'+
+        '<div style="font-size:12px;color:var(--text2);margin-bottom:8px;">Vista previa — '+datos.length+' registros detectados:</div>'+
+        '<div style="max-height:160px;overflow-y:auto;font-size:11px;color:var(--text);">'+
+        datos.slice(0,5).map(d=>'<div style="padding:4px 0;border-bottom:1px solid var(--border);">'+
+          (d.num_empleado||'-')+' — '+(d.apellido_paterno||'')+' '+(d.nombre||'')+' — '+(d.estatus||'')+
+        '</div>').join('')+
+        (datos.length>5?'<div style="color:var(--text2);padding-top:4px;">...y '+(datos.length-5)+' más</div>':'')+
+        '</div></div>';
+      document.getElementById('importForaneoMsg').innerHTML='<div class="alert alert-success" style="margin-top:10px;">✅ Archivo leído: '+datos.length+' registros. Confirma para importar.</div>';
+    }catch(err){
+      document.getElementById('importForaneoMsg').innerHTML='<div class="alert alert-danger">❌ Error leyendo archivo: '+err.message+'</div>';
+    }
+  };
+  reader.readAsText(file);
+}
+function confirmarImportForaneos(){
+  const datos=window._importForaneosData;
+  if(!datos||!datos.length){document.getElementById('importForaneoMsg').innerHTML='<div class="alert alert-warning">⚠️ Carga un archivo primero.</div>';return;}
+  if(!confirm('¿Importar '+datos.length+' registros? Duplicados (mismo No.Emp + Sección) serán omitidos.'))return;
+
+  // Deshabilitar botón durante proceso
+  const btnConfirmar=document.getElementById('btnConfirmarImportF');
+  if(btnConfirmar)btnConfirmar.disabled=true;
+
+  let L=DB.get('trabajadores_foraneos',[]);
+  let importados=0,omitidos=0,errores=[];
+  const total=datos.length;
+  const msgEl=document.getElementById('importForaneoMsg');
+  const barraEl=document.getElementById('importForaneoBarra');
+  const barraFillEl=document.getElementById('importForaneoBarraFill');
+  const barraPctEl=document.getElementById('importForaneoBarraPct');
+
+  // Mostrar barra
+  barraEl.style.display='block';
+
+  function procesarLote(i){
+    if(i>=total){
+      // Finalizado
+      DB.set('trabajadores_foraneos',L);
+      renderTrabForaneos();
+      barraFillEl.style.width='100%';
+      barraPctEl.textContent='100%';
+      let html='<div class="alert alert-success" style="margin-top:12px;">'+
+        '<div style="font-size:14px;font-weight:700;margin-bottom:6px;">✅ Importación completada</div>'+
+        '<div>📥 Importados: <strong>'+importados+'</strong></div>'+
+        '<div>⏭️ Omitidos (duplicados / sin datos): <strong>'+omitidos+'</strong></div>'+
+        '<div>📊 Total procesados: <strong>'+total+'</strong></div>';
+      if(errores.length){
+        html+='<div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.2);">'+
+          '<div style="font-size:12px;font-weight:700;margin-bottom:4px;">⚠️ Registros con error ('+errores.length+'):</div>'+
+          '<div style="max-height:100px;overflow-y:auto;font-size:11px;">'+
+          errores.map(e=>'<div style="padding:2px 0;opacity:.85;">• Fila '+(e.fila)+': '+e.motivo+'</div>').join('')+
+          '</div></div>';
+      }
+      html+='</div>';
+      msgEl.innerHTML=html;
+      if(btnConfirmar)btnConfirmar.disabled=false;
+      window._importForaneosData=null;
+      return;
+    }
+
+    // Procesar registro actual
+    try{
+      const d=datos[i];
+      const numEmp=(d.num_empleado||'').toString().trim();
+      const seccion=(d.pos||d.seccion||d.sección||'').trim();
+
+      if(!numEmp){
+        omitidos++;
+        errores.push({fila:i+2,motivo:'Sin número de empleado'});
+      } else if(L.find(t=>t.num_empleado===numEmp && (t.pos||'')===(seccion||t.pos||''))){
+        omitidos++;
+        // Duplicado silencioso — no es error, es esperado
+      } else {
+        L.push({
+          id:getNextId(L),
+          num_empleado:numEmp,
+          nombre:(d.nombre||'').trim(),
+          apellido_paterno:(d.apellido_paterno||'').trim(),
+          apellido_materno:(d.apellido_materno||'').trim(),
+          pos:seccion,
+          adscripcion:(d.adscripcion||'').trim(),
+          fecha_ingreso:(d.fecha_ingreso||'').trim(),
+          estatus:(d.estatus||'ACTIVO').trim(),
+          observaciones:(d.observaciones||'').trim(),
+          archivo:null,
+          fecha_registro:new Date().toISOString()
+        });
+        importados++;
+      }
+    }catch(err){
+      omitidos++;
+      errores.push({fila:i+2,motivo:err.message||'Error desconocido'});
+    }
+
+    // Actualizar barra
+    const pct=Math.round(((i+1)/total)*100);
+    barraFillEl.style.width=pct+'%';
+    barraPctEl.textContent=pct+'%';
+    msgEl.innerHTML='<div style="font-size:12px;color:var(--text2);margin-top:8px;">Procesando '+
+      (i+1)+' de '+total+' — ✅ '+importados+' importados &nbsp;|&nbsp; ⏭️ '+omitidos+' omitidos'+
+      (errores.length?' &nbsp;|&nbsp; ⚠️ '+errores.length+' errores':'')+
+      '</div>';
+
+    // Procesar siguiente en siguiente tick para no bloquear UI
+    setTimeout(()=>procesarLote(i+1),0);
+  }
+
+  procesarLote(0);
+}
+/* ══ MODAL RESPALDO TRABAJADORES ══ */
+function openModalRespaldoTrab(){
+  const t=DB.get('trabajadores',[]);
+  document.getElementById('respaldoTrabCount').textContent=t.length+' trabajadores en base de datos';
+  openModal('modalRespaldoTrab');
+}
+function respaldoTrabJSON(){
+  const t=DB.get('trabajadores',[]);
+  const fecha=new Date().toISOString().slice(0,10);
+  const blob=new Blob([JSON.stringify({fecha_respaldo:new Date().toISOString(),total:t.length,trabajadores:t},null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='SUTSEM_Trabajadores_'+fecha+'.json';a.click();
+}
+function respaldoTrabExcel(){
+  const t=DB.get('trabajadores',[]);
+  const fecha=new Date().toISOString().slice(0,10);
+  const cols=['id','num_empleado','nombre','apellido_paterno','apellido_materno','pos','dependencia','adscripcion','fecha_ingreso','estatus','telefono','email'];
+  const header=cols.join('\t');
+  const rows=t.map(w=>cols.map(c=>w[c]||'').join('\t'));
+  const tsv=header+'\n'+rows.join('\n');
+  const blob=new Blob(['\uFEFF'+tsv],{type:'text/tab-separated-values;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='SUTSEM_Trabajadores_'+fecha+'.xls';a.click();
+}
+</script>
+
+<!-- MODAL RESPALDO FORÁNEOS -->
+<div class="modal-overlay" id="modalRespaldoForaneos">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-header">
+      <div class="modal-title">💾 Respaldar Trabajadores Foráneos</div>
+      <button class="modal-close" onclick="closeModal('modalRespaldoForaneos')">✕</button>
+    </div>
+    <div class="modal-body" style="padding:24px;">
+      <p style="color:var(--text2);font-size:13px;margin-bottom:20px;" id="respaldoForaneoCount"></p>
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <button class="btn" style="background:#1a3a1a;border:1px solid #3fb950;color:#3fb950;font-size:14px;padding:14px;justify-content:center;" onclick="respaldoForaneosJSON()">
+          📄 Descargar como JSON
+        </button>
+        <button class="btn" style="background:#1a2e3a;border:1px solid #38bdf8;color:#38bdf8;font-size:14px;padding:14px;justify-content:center;" onclick="respaldoForaneosExcel()">
+          📊 Descargar como Excel (.xls)
+        </button>
+      </div>
+    </div>
+    <div class="modal-footer" style="justify-content:flex-end;">
+      <button class="btn btn-secondary" onclick="closeModal('modalRespaldoForaneos')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL IMPORTAR FORÁNEOS -->
+<div class="modal-overlay" id="modalImportarForaneos">
+  <div class="modal" style="max-width:500px;">
+    <div class="modal-header">
+      <div class="modal-title">📥 Importar Trabajadores Foráneos</div>
+      <button class="modal-close" onclick="closeModal('modalImportarForaneos')">✕</button>
+    </div>
+    <div class="modal-body" style="padding:24px;">
+      <p style="color:var(--text2);font-size:12px;margin-bottom:16px;">
+        Acepta <strong>JSON</strong> (respaldo previo), <strong>CSV</strong> o <strong>XLS/TSV</strong> (Excel).<br>
+        <span style="color:var(--warning);">⚠️ Duplicado = mismo No. Empleado <em>dentro de la misma Sección</em>. El mismo No. Emp en distinta sección SÍ se importa.</span>
+      </p>
+      <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:6px;">Seleccionar archivo:</label>
+      <input type="file" id="importForaneoFile" accept=".json,.csv,.tsv,.xls,.xlsx" onchange="leerArchivoImportForaneo()" style="display:block;margin-bottom:8px;font-size:12px;color:var(--text);width:100%;">
+      <div id="importForaneoPreview"></div>
+      <!-- BARRA DE PROGRESO -->
+      <div id="importForaneoBarra" style="display:none;margin-top:14px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <span style="font-size:11px;color:var(--text2);">Progreso de importación</span>
+          <span id="importForaneoBarraPct" style="font-size:12px;font-weight:700;color:var(--accent3);">0%</span>
+        </div>
+        <div style="background:var(--surface2);border-radius:20px;height:14px;overflow:hidden;border:1px solid var(--border);">
+          <div id="importForaneoBarraFill" style="height:100%;width:0%;background:linear-gradient(90deg,var(--accent),var(--success));border-radius:20px;transition:width .1s linear;"></div>
+        </div>
+      </div>
+      <div id="importForaneoMsg"></div>
+    </div>
+    <div class="modal-footer" style="justify-content:flex-end;gap:8px;">
+      <button class="btn btn-secondary" onclick="closeModal('modalImportarForaneos')">Cancelar</button>
+      <button class="btn" id="btnConfirmarImportF" style="background:#4a1a6e;border:1px solid #c084fc;color:#c084fc;" onclick="confirmarImportForaneos()">✅ Confirmar Importación</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL RESPALDO TRABAJADORES -->
+<div class="modal-overlay" id="modalRespaldoTrab">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-header">
+      <div class="modal-title">💾 Respaldar Trabajadores</div>
+      <button class="modal-close" onclick="closeModal('modalRespaldoTrab')">✕</button>
+    </div>
+    <div class="modal-body" style="padding:24px;">
+      <p style="color:var(--text2);font-size:13px;margin-bottom:20px;" id="respaldoTrabCount"></p>
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <button class="btn" style="background:#1a3a1a;border:1px solid #3fb950;color:#3fb950;font-size:14px;padding:14px;justify-content:center;" onclick="respaldoTrabJSON()">
+          📄 Descargar como JSON
+        </button>
+        <button class="btn" style="background:#1a2e3a;border:1px solid #38bdf8;color:#38bdf8;font-size:14px;padding:14px;justify-content:center;" onclick="respaldoTrabExcel()">
+          📊 Descargar como Excel (.xls)
+        </button>
+      </div>
+    </div>
+    <div class="modal-footer" style="justify-content:flex-end;">
+      <button class="btn btn-secondary" onclick="closeModal('modalRespaldoTrab')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+</body></html>
