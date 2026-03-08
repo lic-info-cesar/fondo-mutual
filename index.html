@@ -2524,12 +2524,13 @@ function respaldoForaneosExcel(){
   const t=DB.get('trabajadores_foraneos',[]);
   const fecha=new Date().toISOString().slice(0,10);
   const cols=['id','num_empleado','nombre','apellido_paterno','apellido_materno','pos','adscripcion','fecha_ingreso','estatus','observaciones','fecha_registro'];
-  const header=cols.join('\t');
-  const rows=t.map(w=>cols.map(c=>w[c]||'').join('\t'));
-  const tsv=header+'\n'+rows.join('\n');
-  const blob=new Blob(['\uFEFF'+tsv],{type:'text/tab-separated-values;charset=utf-8'});
+  const headers=['ID','No. Empleado','Nombre','Apellido Paterno','Apellido Materno','Sección','Adscripción','Fecha Ingreso','Estatus','Observaciones','Fecha Registro'];
+  const esc=v=>'"'+String(v||'').replace(/"/g,'""')+'"';
+  const lines=[headers.map(esc).join(',')];
+  t.forEach(w=>lines.push(cols.map(c=>esc(w[c]||'')).join(',')));
+  const blob=new Blob(['\uFEFF'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);
-  a.download='SUTSEM_TrabForaneos_'+fecha+'.xls';a.click();
+  a.download='SUTSEM_TrabForaneos_'+fecha+'.csv';a.click();
 }
 /* ══ IMPORTAR FORÁNEOS ══ */
 function openModalImportarForaneos(){
@@ -2696,12 +2697,13 @@ function respaldoTrabExcel(){
   const t=DB.get('trabajadores',[]);
   const fecha=new Date().toISOString().slice(0,10);
   const cols=['id','num_empleado','nombre','apellido_paterno','apellido_materno','pos','dependencia','adscripcion','fecha_ingreso','estatus','telefono','email'];
-  const header=cols.join('\t');
-  const rows=t.map(w=>cols.map(c=>w[c]||'').join('\t'));
-  const tsv=header+'\n'+rows.join('\n');
-  const blob=new Blob(['\uFEFF'+tsv],{type:'text/tab-separated-values;charset=utf-8'});
+  const headers=['ID','No. Empleado','Nombre','Apellido Paterno','Apellido Materno','P.O.S','Dependencia','Adscripción','Fecha Ingreso','Estatus','Teléfono','Email'];
+  const esc=v=>'"'+String(v||'').replace(/"/g,'""')+'"';
+  const lines=[headers.map(esc).join(',')];
+  t.forEach(w=>lines.push(cols.map(c=>esc(w[c]||'')).join(',')));
+  const blob=new Blob(['\uFEFF'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);
-  a.download='SUTSEM_Trabajadores_'+fecha+'.xls';a.click();
+  a.download='SUTSEM_Trabajadores_'+fecha+'.csv';a.click();
 }
 </script>
 
@@ -2719,7 +2721,7 @@ function respaldoTrabExcel(){
           📄 Descargar como JSON
         </button>
         <button class="btn" style="background:#1a2e3a;border:1px solid #38bdf8;color:#38bdf8;font-size:14px;padding:14px;justify-content:center;" onclick="respaldoForaneosExcel()">
-          📊 Descargar como Excel (.xls)
+          📊 Descargar como Excel (.csv)
         </button>
       </div>
     </div>
@@ -2777,7 +2779,7 @@ function respaldoTrabExcel(){
           📄 Descargar como JSON
         </button>
         <button class="btn" style="background:#1a2e3a;border:1px solid #38bdf8;color:#38bdf8;font-size:14px;padding:14px;justify-content:center;" onclick="respaldoTrabExcel()">
-          📊 Descargar como Excel (.xls)
+          📊 Descargar como Excel (.csv)
         </button>
       </div>
     </div>
